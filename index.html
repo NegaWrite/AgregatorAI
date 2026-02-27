@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregator AI</title>
+    <style>
+        /* Стили остаются прежними, но добавим пару новых классов */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #2C2C2C;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            background-color: #2C2C2C;
+            color: #E0E0E0;
+        }
+
+        .left-panel {
+            width: 312px;
+            background-color: #404040;
+            display: flex;
+            flex-direction: column;
+            padding: 0 0 10px 0;
+            flex-shrink: 0;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .logo-placeholder {
+            width: 40px;
+            height: 40px;
+            background-color: #5E5E5E;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .chat-type-switch {
+            display: flex;
+            margin: 5px 10px 10px 10px;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .type-btn {
+            flex: 1;
+            background-color: #404040;
+            border: 1px solid #5E5E5E;
+            color: #E0E0E0;
+            padding: 6px 0;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .type-btn.active {
+            background-color: #5E5E5E;
+            border-color: #7E7E7E;
+        }
+
+        .type-btn:first-child {
+            border-right: none;
+        }
+
+        .new-chat-btn {
+            background-color: #404040;
+            border: 1px solid #5E5E5E;
+            color: #E0E0E0;
+            padding: 5px 0;
+            margin: 0 10px 10px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 3px;
+        }
+
+        .new-chat-btn:hover {
+            background-color: #4a4a4a;
+        }
+
+        .chats-list {
+            flex: 1;
+            overflow-y: auto;
+            background-color: #404040;
+            list-style: none;
+            margin: 0;
+            padding-left: 0;
+        }
+
+        .chat-item {
+            padding: 8px 15px;
+            border-bottom: 1px solid #5E5E5E;
+            cursor: pointer;
+            color: #E0E0E0;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+        }
+
+        .chat-item:hover {
+            background-color: #4f4f4f;
+        }
+
+        .chat-item.active {
+            background-color: #5E5E5E;
+        }
+
+        .admin-badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background-color: #ff9800;
+            color: #000;
+            font-size: 10px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* Контекстное меню */
+        .context-menu {
+            position: absolute;
+            background-color: #404040;
+            border: 1px solid #5E5E5E;
+            border-radius: 3px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            z-index: 1000;
+            display: none;
+        }
+
+        .context-menu ul {
+            list-style: none;
+            padding: 5px 0;
+        }
+
+        .context-menu li {
+            padding: 8px 20px;
+            cursor: pointer;
+            color: #E0E0E0;
+            font-size: 14px;
+        }
+
+        .context-menu li:hover {
+            background-color: #5E5E5E;
+        }
+
+        /* Правая область */
+        .right-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: #2C2C2C;
+            min-width: 0;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #2C2C2C;
+            border-bottom: 1px solid #404040;
+        }
+
+        .model-select {
+            background-color: #404040;
+            color: white;
+            border: 1px solid #5E5E5E;
+            padding: 5px 10px;
+            border-radius: 3px;
+            width: 150px;
+            margin-right: 20px;
+        }
+
+        .chat-name {
+            color: #E0E0E0;
+            font-size: 16px;
+            flex: 1;
+        }
+
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #2C2C2C;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #0b5e8a;
+            color: white;
+        }
+
+        .assistant-message {
+            align-self: flex-start;
+            background-color: #404040;
+            color: #E0E0E0;
+        }
+
+        .request-panel {
+            background-color: #2C2C2C;
+            border-top: 1px solid #404040;
+            padding: 10px 15px;
+        }
+
+        .request-box {
+            width: 100%;
+            padding: 8px 12px;
+            background-color: #404040;
+            border: 1px solid #5E5E5E;
+            color: #E0E0E0;
+            border-radius: 3px;
+            margin-bottom: 8px;
+        }
+
+        .request-options {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .checkbox-label {
+            color: #E0E0E0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .submit-btn {
+            background-color: #404040;
+            border: 1px solid #5E5E5E;
+            color: #E0E0E0;
+            padding: 5px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .submit-btn:hover {
+            background-color: #4a4a4a;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2C2C2C;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5E5E5E;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="left-panel">
+            <div class="logo-area">
+                <div class="logo-placeholder"></div>
+                <span class="logo-text">Agregator AI</span>
+            </div>
+
+            <!-- Переключатель типа чатов -->
+            <div class="chat-type-switch">
+                <button id="switch-private" class="type-btn active">Личные</button>
+                <button id="switch-public" class="type-btn">Общие</button>
+            </div>
+
+            <button id="new-chat" class="new-chat-btn">+ Новый чат</button>
+            <div class="chats-list" id="chats-list">
+                <!-- список чатов -->
+            </div>
+        </div>
+
+        <div class="right-area">
+            <div class="top-bar">
+                <select id="model-select" class="model-select"></select>
+                <span id="chat-name" class="chat-name">Выберите чат</span>
+                <!-- Метка админа, видна только localhost -->
+                <span id="admin-badge" class="admin-badge" style="display: none;">Admin</span>
+            </div>
+
+            <div class="messages-area" id="messages-area"></div>
+
+            <div class="request-panel">
+                <input type="text" id="request-box" class="request-box" placeholder="Введите сообщение...">
+                <div class="request-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="internet-search"> Поиск в интернете
+                    </label>
+                    <button id="submit-btn" class="submit-btn">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контекстное меню -->
+    <div id="context-menu" class="context-menu">
+        <ul>
+            <li id="menu-rename">Переименовать</li>
+            <li id="menu-delete">Удалить</li>
+        </ul>
+    </div>
+
+    <script>
+        // --- Конфигурация API ---
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:5000'          // локальный бэкенд
+            : 'http://26.128.11.168:5000';      // удалённый сервер (замените на ваш IP)
+
+        // --- Состояние приложения ---
+        let currentChatId = null;
+        let currentModel = '';
+        let chatType = 'private'; // 'private' или 'public'
+        let isAdmin = false;       // будет установлено после проверки
+
+        // --- DOM элементы ---
+        const chatsListEl = document.getElementById('chats-list');
+        const modelSelect = document.getElementById('model-select');
+        const chatNameEl = document.getElementById('chat-name');
+        const messagesArea = document.getElementById('messages-area');
+        const requestBox = document.getElementById('request-box');
+        const submitBtn = document.getElementById('submit-btn');
+        const newChatBtn = document.getElementById('new-chat');
+        const internetSearchCheck = document.getElementById('internet-search');
+        const switchPrivateBtn = document.getElementById('switch-private');
+        const switchPublicBtn = document.getElementById('switch-public');
+        const adminBadge = document.getElementById('admin-badge');
+        const contextMenu = document.getElementById('context-menu');
+        const menuRename = document.getElementById('menu-rename');
+        const menuDelete = document.getElementById('menu-delete');
+
+        let targetChatId = null; // для контекстного меню
+
+        // --- Определяем, админ ли мы (по факту загрузки страницы) ---
+        function checkAdmin() {
+            // Простейший способ: считаем админом, если открыто с localhost
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                isAdmin = true;
+                adminBadge.style.display = 'inline-block';
+            } else {
+                isAdmin = false;
+                adminBadge.style.display = 'none';
+            }
+        }
+
+        // --- Загрузка моделей ---
+        function loadModels() {
+            fetch(`${API_BASE}/api/models`)
+                .then(res => res.json())
+                .then(models => {
+                    if (models.length === 0) {
+                        modelSelect.innerHTML = '<option>Нет моделей</option>';
+                    } else {
+                        models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model;
+                            option.textContent = model;
+                            modelSelect.appendChild(option);
+                        });
+                        currentModel = models[0];
+                    }
+                })
+                .catch(err => console.error('Ошибка загрузки моделей:', err));
+        }
+
+        // --- Загрузка списка чатов в зависимости от типа ---
+        function loadChats() {
+            const url = chatType === 'private' 
+                ? `${API_BASE}/api/private/chats`
+                : `${API_BASE}/api/public/chats`;
+            fetch(url)
+                .then(res => res.json())
+                .then(chats => {
+                    chatsListEl.innerHTML = '';
+                    chats.forEach(chat => {
+                        const div = document.createElement('div');
+                        div.className = 'chat-item' + (chat.id === currentChatId ? ' active' : '');
+                        div.dataset.id = chat.id;
+                        div.textContent = chat.name.length > 35 ? chat.name.slice(0,32)+'...' : chat.name;
+                        div.addEventListener('click', () => switchChat(chat.id));
+                        div.addEventListener('contextmenu', (e) => showContextMenu(e, chat.id));
+                        chatsListEl.appendChild(div);
+                    });
+                    // Если нет активного чата, сбросить область сообщений
+                    if (!chats.find(c => c.id === currentChatId)) {
+                        currentChatId = null;
+                        messagesArea.innerHTML = '';
+                        chatNameEl.textContent = 'Выберите чат';
+                    }
+                });
+        }
+
+        // --- Переключение чата ---
+        function switchChat(chatId) {
+            currentChatId = chatId;
+            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+            const activeEl = document.querySelector(`.chat-item[data-id="${chatId}"]`);
+            if (activeEl) activeEl.classList.add('active');
+            loadMessages(chatId);
+            chatNameEl.textContent = activeEl ? activeEl.textContent : 'Чат';
+        }
+
+        // --- Загрузка сообщений ---
+        function loadMessages(chatId) {
+            const url = chatType === 'private'
+                ? `${API_BASE}/api/private/messages?chat_id=${chatId}`
+                : `${API_BASE}/api/public/messages?chat_id=${chatId}`;
+            fetch(url)
+                .then(res => res.json())
+                .then(messages => {
+                    messagesArea.innerHTML = '';
+                    messages.forEach(msg => {
+                        const msgDiv = document.createElement('div');
+                        msgDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'assistant-message'}`;
+                        msgDiv.textContent = msg.content;
+                        messagesArea.appendChild(msgDiv);
+                    });
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                });
+        }
+
+        // --- Создание нового чата ---
+        function createNewChat() {
+            const url = chatType === 'private'
+                ? `${API_BASE}/api/private/chats/new`
+                : `${API_BASE}/api/public/chats/new`;
+            fetch(url, { method: 'POST' })
+                .then(res => res.json())
+                .then(newChat => {
+                    loadChats();
+                    switchChat(newChat.id);
+                });
+        }
+
+        // --- Отправка сообщения ---
+        function sendMessage() {
+            const text = requestBox.value.trim();
+            if (!text || !currentChatId) return;
+            requestBox.value = '';
+
+            // Показываем сообщение пользователя
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.className = 'message user-message';
+            userMsgDiv.textContent = text;
+            messagesArea.appendChild(userMsgDiv);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+
+            submitBtn.disabled = true;
+
+            const url = chatType === 'private'
+                ? `${API_BASE}/api/private/chat`
+                : `${API_BASE}/api/public/chat`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: text,
+                    chat_id: currentChatId,
+                    model: currentModel,
+                    internet_search: internetSearchCheck.checked
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.reply) {
+                    const assistantDiv = document.createElement('div');
+                    assistantDiv.className = 'message assistant-message';
+                    assistantDiv.textContent = data.reply;
+                    messagesArea.appendChild(assistantDiv);
+                } else if (data.error) {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'message assistant-message';
+                    errorDiv.textContent = 'Ошибка: ' + data.error;
+                    messagesArea.appendChild(errorDiv);
+                }
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+                submitBtn.disabled = false;
+            })
+            .catch(err => {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'message assistant-message';
+                errorDiv.textContent = 'Ошибка сети: ' + err;
+                messagesArea.appendChild(errorDiv);
+                submitBtn.disabled = false;
+            });
+        }
+
+        // --- Контекстное меню ---
+        function showContextMenu(e, chatId) {
+            e.preventDefault();
+            targetChatId = chatId;
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = e.pageX + 'px';
+            contextMenu.style.top = e.pageY + 'px';
+
+            // Для общих чатов удаление доступно только админу
+            if (chatType === 'public' && !isAdmin) {
+                menuDelete.style.display = 'none';
+            } else {
+                menuDelete.style.display = 'block';
+            }
+        }
+
+        // --- Удаление чата ---
+        function deleteChat() {
+            if (!targetChatId) return;
+            if (!confirm('Удалить этот чат?')) return;
+
+            const url = chatType === 'private'
+                ? `${API_BASE}/api/private/chats/${targetChatId}`
+                : `${API_BASE}/api/public/chats/${targetChatId}`;
+
+            fetch(url, { method: 'DELETE' })
+                .then(res => {
+                    if (res.ok) {
+                        if (currentChatId === targetChatId) {
+                            currentChatId = null;
+                            messagesArea.innerHTML = '';
+                            chatNameEl.textContent = 'Выберите чат';
+                        }
+                        loadChats();
+                    } else {
+                        alert('Не удалось удалить чат');
+                    }
+                    hideContextMenu();
+                });
+        }
+
+        // --- Переименование чата ---
+        function renameChat() {
+            if (!targetChatId) return;
+            const newName = prompt('Введите новое название чата:', '');
+            if (!newName) return;
+
+            const url = chatType === 'private'
+                ? `${API_BASE}/api/private/chats/${targetChatId}`
+                : `${API_BASE}/api/public/chats/${targetChatId}`;
+
+            fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.name) {
+                    loadChats();
+                    if (currentChatId === targetChatId) {
+                        chatNameEl.textContent = data.name;
+                    }
+                }
+                hideContextMenu();
+            });
+        }
+
+        function hideContextMenu() {
+            contextMenu.style.display = 'none';
+            targetChatId = null;
+        }
+
+        // --- Переключение типа чатов ---
+        function setChatType(type) {
+            chatType = type;
+            if (type === 'private') {
+                switchPrivateBtn.classList.add('active');
+                switchPublicBtn.classList.remove('active');
+            } else {
+                switchPublicBtn.classList.add('active');
+                switchPrivateBtn.classList.remove('active');
+            }
+            currentChatId = null;
+            messagesArea.innerHTML = '';
+            chatNameEl.textContent = 'Выберите чат';
+            loadChats();
+        }
+
+        // --- Инициализация и события ---
+        document.addEventListener('click', hideContextMenu);
+        document.addEventListener('contextmenu', (e) => {
+            if (!e.target.closest('.chat-item')) hideContextMenu();
+        });
+
+        menuRename.addEventListener('click', renameChat);
+        menuDelete.addEventListener('click', deleteChat);
+
+        switchPrivateBtn.addEventListener('click', () => setChatType('private'));
+        switchPublicBtn.addEventListener('click', () => setChatType('public'));
+
+        newChatBtn.addEventListener('click', createNewChat);
+        submitBtn.addEventListener('click', sendMessage);
+        requestBox.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        modelSelect.addEventListener('change', (e) => {
+            currentModel = e.target.value;
+        });
+
+        // Старт
+        checkAdmin();
+        loadModels();
+        loadChats(); // загружаем приватные по умолчанию
+    </script>
+</body>
+</html>
