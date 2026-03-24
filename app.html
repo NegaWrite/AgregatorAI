@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat - AI Agregator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #0d0d12; color: #e0e0e5; min-height: 100vh; display: flex; }
+        
+        /* Sidebar */
+        #sidebar { position: fixed; left: 0; top: 0; height: 100vh; width: 300px; background: linear-gradient(180deg, #12121a 0%, #0a0a10 100%); display: flex; flex-direction: column; border-right: 1px solid #1a1a24; z-index: 50; }
+        #sidebar-header { padding: 1.25rem; border-bottom: 1px solid #1a1a24; display: flex; align-items: center; gap: 0.75rem; }
+        #sidebar-header a { color: #a0a0b0; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; transition: color 0.2s; }
+        #sidebar-header a:hover { color: #e0e0e5; }
+        #sidebar-header svg { width: 18px; height: 18px; }
+        #new-chat-btn { width: 100%; padding: 0.875rem; border-radius: 12px; border: none; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); margin-top: 0.75rem; }
+        #new-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
+        #chats-list { flex: 1; overflow-y: auto; padding: 0.75rem; }
+        #chats-list::-webkit-scrollbar { width: 6px; }
+        #chats-list::-webkit-scrollbar-track { background: transparent; }
+        #chats-list::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 3px; }
+        
+        .chat-item { display: flex; align-items: center; padding: 0.875rem 1rem; border-radius: 12px; cursor: pointer; margin-bottom: 0.375rem; gap: 0.5rem; transition: all 0.2s; border: 1px solid transparent; }
+        .chat-item:hover { background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.2); }
+        .chat-item.active { background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.15) 100%); border-color: rgba(99, 102, 241, 0.3); }
+        .chat-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.9rem; color: #a0a0b0; }
+        .chat-item.active .chat-item-title { color: #e0e0e5; }
+        .chat-item-delete { opacity: 0; background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.25rem 0.5rem; font-size: 0.85rem; transition: opacity 0.2s; border-radius: 6px; }
+        .chat-item:hover .chat-item-delete { opacity: 1; }
+        .chat-item-delete:hover { background: rgba(239, 68, 68, 0.15); }
+        
+        /* Main content */
+        #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #0d0d12; margin-left: 300px; }
+        header { padding: 1rem 1.5rem; background: linear-gradient(180deg, #14141c 0%, #0d0d12 100%); display: flex; gap: 1rem; align-items: center; border-bottom: 1px solid #1a1a24; }
+        select { display: none; }
+        
+        /* Custom model select */
+        #model-selector { position: relative; min-width: 280px; }
+        #model-selected { padding: 0.625rem 1rem; border-radius: 10px; border: 1px solid #2a2a3a; background: #16161e; color: #e0e0e5; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: border-color 0.2s; }
+        #model-selected:hover { border-color: #6366f1; }
+        #model-selected img { width: 20px; height: 20px; border-radius: 4px; object-fit: contain; background: #fff; }
+        #model-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #16161e; border: 1px solid #2a2a3a; border-radius: 10px; margin-top: 0.5rem; max-height: 300px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        #model-dropdown.open { display: block; }
+        .model-group { padding: 0.5rem 0; border-bottom: 1px solid #2a2a3a; }
+        .model-group:last-child { border-bottom: none; }
+        .model-group-title { padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 600; color: #6a6a7a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 0.5rem; }
+        .model-group-title img { width: 16px; height: 16px; border-radius: 3px; object-fit: contain; background: #fff; }
+        .model-option { padding: 0.625rem 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; }
+        .model-option:hover { background: rgba(99, 102, 241, 0.15); }
+        .model-option.selected { background: rgba(99, 102, 241, 0.2); }
+        .model-option img { width: 24px; height: 24px; border-radius: 4px; object-fit: contain; background: #fff; }
+        .model-option-info { flex: 1; }
+        .model-option-name { font-size: 0.9rem; color: #e0e0e5; }
+        .model-option-meta { font-size: 0.75rem; color: #6a6a7a; }
+        .model-option-badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        button { padding: 0.625rem 1rem; border-radius: 10px; border: 1px solid #2a2a3a; background: #16161e; color: #a0a0b0; cursor: pointer; transition: all 0.2s; }
+        button:hover { background: #1e1e28; border-color: #6366f1; color: #e0e0e5; }
+        #menu-toggle { display: none; font-size: 1.25rem; }
+        #chat-title { flex: 1; font-weight: 600; font-size: 1rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #a0a0b0; }
+        #rename-btn { font-size: 1rem; padding: 0.5rem 0.75rem; }
+        
+        #chat { flex: 1; overflow-y: auto; padding: 1.5rem; padding-bottom: 100px; display: flex; flex-direction: column; gap: 1.25rem; }
+        #chat::-webkit-scrollbar { width: 8px; }
+        #chat::-webkit-scrollbar-track { background: transparent; }
+        #chat::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 4px; }
+        
+        .message { max-width: 80%; padding: 1.125rem 1.25rem; border-radius: 16px; line-height: 1.7; font-size: 0.95rem; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .typing-cursor::after { content: '▊'; animation: blink 0.8s infinite; color: #6366f1; }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        .user { align-self: flex-end; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3); }
+        .assistant { align-self: flex-start; background: linear-gradient(135deg, #1a1a24 0%, #16161e 100%); border: 1px solid #2a2a3a; border-bottom-left-radius: 4px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); }
+        
+        /* Empty state */
+        #empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #4a4a5a; gap: 1rem; }
+        #empty-state h2 { font-size: 1.5rem; font-weight: 600; color: #6a6a7a; }
+        #empty-state p { font-size: 1rem; }
+        #empty-state svg { width: 80px; height: 80px; opacity: 0.3; }
+        
+        /* Input area */
+        #input-area { position: fixed; bottom: 0; right: 0; left: 300px; padding: 1.25rem 1.5rem; background: linear-gradient(0deg, #14141c 0%, #0d0d12 100%); display: flex; gap: 0.75rem; border-top: 1px solid #1a1a24; }
+        #message { flex: 1; padding: 1rem 1.25rem; border-radius: 16px; border: 1px solid #2a2a3a; background: #16161e; color: #e0e0e5; resize: none; font-family: inherit; font-size: 0.95rem; max-height: 150px; transition: border-color 0.2s; }
+        #message:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); }
+        #message::placeholder { color: #5a5a6a; }
+        #send-btn { padding: 1rem 1.75rem; border-radius: 14px; border: none; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); }
+        #send-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); }
+        #send-btn:disabled { background: #2a2a3a; box-shadow: none; cursor: not-allowed; transform: none; }
+        .loading { color: #6a6a7a; font-style: italic; }
+        
+        /* Markdown styles */
+        .message h1, .message h2, .message h3, .message h4, .message h5, .message h6 { margin: 1em 0 0.5em; color: #fff; }
+        .message h1 { font-size: 1.5em; border-bottom: 1px solid #2a2a3a; padding-bottom: 0.3em; }
+        .message h2 { font-size: 1.3em; }
+        .message h3 { font-size: 1.1em; }
+        .message p { margin: 0.6em 0; }
+        .message ul, .message ol { margin: 0.5em 0; padding-left: 1.5em; }
+        .message li { margin: 0.3em 0; }
+        .message strong { color: #fff; font-weight: 600; }
+        .message em { color: #b0b0c0; font-style: italic; }
+        .message a { color: #818cf8; text-decoration: none; }
+        .message a:hover { text-decoration: underline; }
+        .message blockquote { border-left: 4px solid #6366f1; padding: 0.5em 1em; margin: 0.75em 0; color: #9090a0; background: rgba(99, 102, 241, 0.08); border-radius: 0 8px 8px 0; }
+        .message hr { border: none; border-top: 1px solid #2a2a3a; margin: 1.5em 0; }
+        .message pre { margin: 0.75em 0; border-radius: 12px; overflow-x: auto; background: #0a0a0f; border: 1px solid #1a1a24; }
+        .message pre code { padding: 1.125rem; display: block; font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.875em; line-height: 1.6; }
+        .message code:not(pre code) { background: #0a0a0f; padding: 0.2em 0.5em; border-radius: 6px; font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.9em; border: 1px solid #1a1a24; }
+        .message table { border-collapse: collapse; margin: 0.75em 0; width: 100%; overflow-x: auto; display: block; }
+        .message th, .message td { border: 1px solid #2a2a3a; padding: 0.6em 0.8em; text-align: left; }
+        .message th { background: #0f0f15; font-weight: 600; }
+        .message tr:nth-child(even) { background: rgba(42, 42, 58, 0.3); }
+        .message .mermaid { background: #fff; padding: 1rem; border-radius: 12px; margin: 0.75em 0; text-align: center; overflow-x: auto; }
+        .message .mermaid svg { max-width: 100%; height: auto; }
+        .message pre.ascii-art { background: transparent; border: none; padding: 0; }
+        .message pre.ascii-art code { color: #a78bfa; font-size: 0.8em; line-height: 1.15; }
+        .message img { max-width: 392px; width: auto; max-height: 392px; border-radius: 12px; margin: 1em 0; box-shadow: 0 4px 20px rgba(0,0,0,0.3); object-fit: contain; background: #1a1a24; padding: 8px; }
+        .message .image-loading { display: flex; align-items: center; justify-content: center; padding: 2rem; color: #6a6a7a; }
+        .message .image-loading::before { content: ''; width: 24px; height: 24px; border: 3px solid #2a2a3a; border-top-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        @media (max-width: 768px) {
+            #main { margin-left: 0; }
+            #sidebar { left: -300px; transition: left 0.3s; box-shadow: none; }
+            #sidebar.open { left: 0; box-shadow: 0 0 50px rgba(0, 0, 0, 0.5); }
+            #menu-toggle { display: block; }
+            .message { max-width: 90%; }
+            #input-area { left: 0; }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+</head>
+<body>
+    <div id="sidebar">
+        <div id="sidebar-header">
+            <a href="/">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                На главную
+            </a>
+        </div>
+        <div id="sidebar-header" style="border-bottom: none;">
+            <button id="new-chat-btn">+ Новый чат</button>
+        </div>
+        <div id="chats-list"></div>
+    </div>
+    
+    <div id="main">
+        <header>
+            <button id="menu-toggle">☰</button>
+            <span id="chat-title"></span>
+            <button id="rename-btn" title="Переименовать">✏️</button>
+            <span style="color:#6a6a7a;">Модель:</span>
+            <div id="model-selector">
+                <div id="model-selected">Выберите модель</div>
+                <div id="model-dropdown"></div>
+            </div>
+            <button onclick="loadModels()">↻</button>
+        </header>
+        
+        <div id="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <h2>Выберите или создайте чат</h2>
+            <p>Нажмите "+ Новый чат" слева</p>
+        </div>
+        
+        <div id="chat" style="display: none;"></div>
+        
+        <div id="input-area" style="display: none;">
+            <div style="display: flex; flex-direction: column; width: 100%; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #6a6a7a;">
+                    <span>Баланс:</span>
+                    <span id="words-balance" style="color: #22c55e; font-weight: 600;">0</span>
+                    <span>слов</span>
+                    <span style="color: #4a4a5a;">|</span>
+                    <span>Сообщение:</span>
+                    <span id="msg-words">0</span>
+                    <span>слов</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <textarea id="message" rows="1" placeholder="Введите сообщение..." style="flex: 1;"></textarea>
+                    <button id="send-btn">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="/config.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose', darkMode: true });
+        
+        const renderer = new marked.Renderer();
+        marked.setOptions({
+            renderer,
+            highlight: (code, lang) => {
+                if (lang && hljs.getLanguage(lang)) return hljs.highlight(code, { language: lang }).value;
+                return hljs.highlightAuto(code).value;
+            },
+            breaks: true,
+            gfm: true
+        });
+
+        let currentChat = null;
+        let chats = [];
+        let wordsBalance = 0;
+        const chatContainer = document.getElementById('chat');
+        const emptyState = document.getElementById('empty-state');
+        const inputArea = document.getElementById('input-area');
+        const messageInput = document.getElementById('message');
+        const sendBtn = document.getElementById('send-btn');
+
+        document.getElementById('menu-toggle').onclick = () => document.getElementById('sidebar').classList.toggle('open');
+        
+        messageInput.addEventListener('input', () => {
+            const words = messageInput.value.trim().split(/\s+/).filter(w => w.length > 0).length;
+            document.getElementById('msg-words').textContent = words;
+        });
+        
+        async function loadWordsBalance() {
+            try {
+                const data = await API.get('/api/clicks');
+                wordsBalance = data.words_balance || 0;
+                document.getElementById('words-balance').textContent = Math.floor(wordsBalance);
+            } catch (e) { console.error('Ошибка загрузки баланса:', e); }
+        }
+        document.getElementById('new-chat-btn').onclick = createNewChat;
+        document.getElementById('rename-btn').onclick = renameCurrentChat;
+        
+        messageInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        });
+
+        const modelFamilies = {
+            'qwen': { name: 'Qwen', logo: 'https://api.companyenrich.com/logo/qwen.ai' },
+            'gpt-oss': { name: 'GPT-OSS', logo: 'https://api.companyenrich.com/logo/chatgpt.com' },
+            'glm': { name: 'GLM', logo: 'https://api.companyenrich.com/logo/z.ai' },
+            'minimax': { name: 'MiniMax', logo: 'https://api.companyenrich.com/logo/minimax.io' },
+            'deepseek': { name: 'DeepSeek', logo: 'https://api.companyenrich.com/logo/deepseek.com' },
+            'qwen2.5': { name: 'Qwen (локальная)', logo: 'https://api.companyenrich.com/logo/qwen.ai' },
+            'default': { name: 'Другие', logo: 'https://api.companyenrich.com/logo/qwen.ai' }
+        };
+
+        function getModelFamily(modelName) {
+            const lower = modelName.toLowerCase();
+            for (const key of Object.keys(modelFamilies)) {
+                if (lower.includes(key)) return key;
+            }
+            return 'default';
+        }
+
+        function getSmartLevel(params) {
+            const paramsNum = parseFloat((params || '0B').replace(/[B]/g, ''));
+            if (paramsNum >= 400) return 10;
+            if (paramsNum >= 200) return 9;
+            if (paramsNum >= 100) return 8;
+            if (paramsNum >= 50) return 7;
+            if (paramsNum >= 20) return 6;
+            if (paramsNum >= 10) return 5;
+            if (paramsNum >= 5) return 4;
+            return 3;
+        }
+
+        let selectedModel = '';
+
+        function renderModelSelector(models) {
+            const dropdown = document.getElementById('model-dropdown');
+            const selected = document.getElementById('model-selected');
+            
+            const groups = {};
+            models.forEach(m => {
+                const family = getModelFamily(m.name);
+                if (!groups[family]) groups[family] = [];
+                groups[family].push(m);
+            });
+
+            dropdown.innerHTML = '';
+            
+            Object.entries(groups).forEach(([familyKey, familyModels]) => {
+                const family = modelFamilies[familyKey] || modelFamilies['default'];
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'model-group';
+                
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'model-group-title';
+                titleDiv.innerHTML = `<img src="${family.logo}" alt="">${family.name}`;
+                groupDiv.appendChild(titleDiv);
+
+                familyModels.forEach(m => {
+                    const nameParts = m.name.split(':');
+                    const shortName = nameParts[0];
+                    const variant = nameParts[1] || '';
+                    const isCloud = m.name.includes('cloud');
+                    const smart = getSmartLevel(m.details?.parameter_size);
+                    
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'model-option' + (selectedModel === m.name ? ' selected' : '');
+                    optionDiv.innerHTML = `
+                        <img src="${family.logo}" alt="">
+                        <div class="model-option-info">
+                            <div class="model-option-name">${shortName}${variant ? ':' + variant : ''}</div>
+                            <div class="model-option-meta">${m.details?.parameter_size || '?'} • умность: ${smart}/10</div>
+                        </div>
+                        <span class="model-option-badge">${isCloud ? '🔗' : '💾'}</span>
+                    `;
+                    optionDiv.onclick = () => selectModel(m.name, family.logo, shortName, variant);
+                    groupDiv.appendChild(optionDiv);
+                });
+
+                dropdown.appendChild(groupDiv);
+            });
+
+            if (selectedModel) {
+                const model = models.find(m => m.name === selectedModel);
+                if (model) {
+                    const family = getModelFamily(model.name);
+                    const familyData = modelFamilies[family] || modelFamilies['default'];
+                    const nameParts = model.name.split(':');
+                    selectModel(model.name, familyData.logo, nameParts[0], nameParts[1] || '');
+                }
+            } else if (models.length > 0) {
+                const family = getModelFamily(models[0].name);
+                const familyData = modelFamilies[family] || modelFamilies['default'];
+                const nameParts = models[0].name.split(':');
+                selectModel(models[0].name, familyData.logo, nameParts[0], nameParts[1] || '');
+            }
+        }
+
+        function selectModel(name, logo, shortName, variant) {
+            selectedModel = name;
+            const selected = document.getElementById('model-selected');
+            selected.innerHTML = `<img src="${logo}" alt="">${shortName}${variant ? ':' + variant : ''}`;
+            document.getElementById('model-dropdown').classList.remove('open');
+            
+            document.querySelectorAll('.model-option').forEach(el => el.classList.remove('selected'));
+            const options = document.querySelectorAll('.model-option');
+            options.forEach(opt => {
+                if (opt.querySelector('.model-option-name')?.textContent === shortName + (variant ? ':' + variant : '')) {
+                    opt.classList.add('selected');
+                }
+            });
+        }
+
+        document.getElementById('model-selected').onclick = () => {
+            document.getElementById('model-dropdown').classList.toggle('open');
+        };
+
+        document.addEventListener('click', e => {
+            if (!document.getElementById('model-selector').contains(e.target)) {
+                document.getElementById('model-dropdown').classList.remove('open');
+            }
+        });
+
+        async function loadModels() {
+            try {
+                const data = await API.get('/api/models');
+                renderModelSelector(data.models || []);
+            } catch (e) { alert('Ошибка: ' + e.message); }
+        }
+
+        async function loadChats() {
+            try {
+                const data = await API.get('/api/chats');
+                chats = data.chats || [];
+                renderChatsList();
+            } catch (e) { console.error('Ошибка загрузки чатов:', e); }
+        }
+
+        function renderChatsList() {
+            const list = document.getElementById('chats-list');
+            list.innerHTML = '';
+            chats.forEach(chat => {
+                const div = document.createElement('div');
+                div.className = 'chat-item' + (currentChat?.id === chat.id ? ' active' : '');
+                div.innerHTML = `
+                    <span class="chat-item-title" data-id="${chat.id}">${escapeHtml(chat.title)}</span>
+                    <button class="chat-item-delete" title="Удалить">✕</button>
+                `;
+                div.onclick = e => {
+                    if (!e.target.classList.contains('chat-item-delete')) openChat(chat);
+                };
+                div.querySelector('.chat-item-title').ondblclick = e => {
+                    e.stopPropagation();
+                    editChatTitle(chat);
+                };
+                div.querySelector('.chat-item-delete').onclick = e => {
+                    e.stopPropagation();
+                    deleteChat(chat.id);
+                };
+                list.appendChild(div);
+            });
+        }
+        
+        function editChatTitle(chat) {
+            const newTitle = prompt('Новое название чата:', chat.title);
+            if (newTitle && newTitle.trim()) {
+                chat.title = newTitle.trim();
+                const idx = chats.findIndex(c => c.id === chat.id);
+                if (idx !== -1) chats[idx].title = chat.title;
+                saveCurrentChat();
+                renderChatsList();
+            }
+        }
+        
+        async function generateTitle() {
+            if (!currentChat || currentChat.messages.length < 2) return;
+            if (currentChat.title !== 'Новый чат') return;
+            
+            const msgs = currentChat.messages.slice(0, 2);
+            const prompt = `Придумай короткое название (до 5 слов) для этого разговора. Ответь ТОЛЬКО названием, без кавычек и пояснений:\n\nВопрос: ${msgs[0].content}`;
+            
+            try {
+                const data = await API.post('/api/chat', { model: selectedModel, messages: [{ role: 'user', content: prompt }] });
+                const title = data.message?.content?.trim()?.substring(0, 50) || 'Новый чат';
+                currentChat.title = title;
+                const idx = chats.findIndex(c => c.id === currentChat.id);
+                if (idx !== -1) chats[idx].title = title;
+                document.getElementById('chat-title').textContent = title;
+                saveCurrentChat();
+                renderChatsList();
+            } catch (e) { console.error('Ошибка генерации названия:', e); }
+        }
+
+        async function createNewChat() {
+            const model = selectedModel || '';
+            try {
+                const data = await API.post('/api/chats', { title: 'Новый чат', model, messages: [] });
+                const newChat = { id: data.id, title: 'Новый чат', model, messages: [] };
+                chats.unshift(newChat);
+                renderChatsList();
+                openChat(newChat);
+            } catch (e) { alert('Ошибка: ' + e.message); }
+        }
+
+        function openChat(chat) {
+            currentChat = chat;
+            selectedModel = chat.model || '';
+            chatContainer.innerHTML = '';
+            chat.messages.forEach(m => addMessage(m.role, m.content, false));
+            emptyState.style.display = 'none';
+            chatContainer.style.display = 'flex';
+            inputArea.style.display = 'flex';
+            document.getElementById('chat-title').textContent = chat.title;
+            document.getElementById('chat-title').style.display = chat ? 'block' : 'none';
+            document.getElementById('rename-btn').style.display = chat ? 'block' : 'none';
+            renderChatsList();
+            document.getElementById('sidebar').classList.remove('open');
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function renameCurrentChat() {
+            if (!currentChat) return;
+            const newTitle = prompt('Новое название чата:', currentChat.title);
+            if (newTitle && newTitle.trim()) {
+                currentChat.title = newTitle.trim();
+                const idx = chats.findIndex(c => c.id === currentChat.id);
+                if (idx !== -1) chats[idx].title = currentChat.title;
+                document.getElementById('chat-title').textContent = currentChat.title;
+                saveCurrentChat();
+                renderChatsList();
+            }
+        }
+
+        async function deleteChat(chatId) {
+            if (!confirm('Удалить чат?')) return;
+            try {
+                await fetch(`/api/chats/${chatId}`, { method: 'DELETE' });
+                chats = chats.filter(c => c.id !== chatId);
+                if (currentChat?.id === chatId) {
+                    currentChat = null;
+                    emptyState.style.display = 'flex';
+                    chatContainer.style.display = 'none';
+                    inputArea.style.display = 'none';
+                    document.getElementById('chat-title').style.display = 'none';
+                    document.getElementById('rename-btn').style.display = 'none';
+                }
+                renderChatsList();
+            } catch (e) { alert('Ошибка: ' + e.message); }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function isAsciiArt(code) {
+            const lines = code.trim().split('\n');
+            if (lines.length < 2) return false;
+            return /[/\|\\_<>+*#@$%&!~`^]/.test(code) && lines.every(l => l.length < 60);
+        }
+
+        async function renderMermaid(container) {
+            const pres = container.querySelectorAll('pre');
+            for (const pre of pres) {
+                const code = pre.querySelector('code');
+                if (!code) continue;
+                const lang = code.className.replace('language-', '');
+                if (lang === 'mermaid') {
+                    try {
+                        const id = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                        const { svg } = await mermaid.render(id, code.textContent.trim());
+                        pre.replaceWith(Object.assign(document.createElement('div'), { className: 'mermaid', innerHTML: svg }));
+                    } catch (e) { pre.style.background = '#fff'; pre.style.color = '#333'; }
+                }
+            }
+        }
+
+        function renderLatex(container) {
+            container.querySelectorAll('p, li, td, th').forEach(el => {
+                if (!el.querySelector('code, pre')) {
+                    renderMathInElement(el, { delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ], throwOnError: false });
+                }
+            });
+        }
+
+        function processCodeBlocks(container) {
+            container.querySelectorAll('pre').forEach(pre => {
+                const code = pre.querySelector('code');
+                if (!code) return;
+                const lang = code.className.replace('language-', '');
+                if (lang === 'ascii' || (isAsciiArt(code.textContent) && !['mermaid', 'plantuml', 'dot', 'python', 'javascript', 'json', 'yaml'].includes(lang))) {
+                    pre.classList.add('ascii-art');
+                }
+            });
+        }
+
+        function addMessage(role, content, save = true) {
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            if (role === 'user') {
+                div.textContent = content;
+            } else {
+                div.innerHTML = marked.parse(content);
+                processCodeBlocks(div);
+                renderMermaid(div);
+                renderLatex(div);
+            }
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            if (save && currentChat) {
+                currentChat.messages.push({ role, content });
+                saveCurrentChat();
+            }
+        }
+
+        async function saveCurrentChat() {
+            if (!currentChat) return;
+            try {
+                await fetch(`/api/chats/${currentChat.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: currentChat.title, model: selectedModel, messages: currentChat.messages })
+                });
+            } catch (e) { console.error('Ошибка сохранения:', e); }
+        }
+
+        async function sendMessage() {
+            const msg = messageInput.value.trim();
+            if (!msg || !currentChat) return;
+            
+            const wordCount = msg.split(/\s+/).filter(w => w.length > 0).length;
+            
+            if (wordCount > wordsBalance) {
+                alert(`Недостаточно слов! Нужно ${wordCount}, в наличии ${wordsBalance}. Иди кликай!`);
+                return;
+            }
+            
+            addMessage('user', msg);
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            
+            // Spend words
+            try {
+                await API.post('/api/clicks/spend', { words: wordCount });
+                wordsBalance -= wordCount;
+                document.getElementById('words-balance').textContent = Math.floor(wordsBalance);
+                document.getElementById('msg-words').textContent = 0;
+            } catch (e) { console.error('Ошибка списания слов:', e); }
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message assistant';
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'typing-cursor';
+            msgDiv.appendChild(contentDiv);
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            let fullContent = '';
+            let isStreaming = true;
+
+            try {
+                const systemPrompt = `Ты AI-ассистент. Если пользователь хочет сгенерировать изображение или картинку, ВКЛЮЧИ в свой ответ специальную метку [IMAGE:описание изображения] где "описание изображения" это детальный промпт для генерации изображения на английском языке. Примеры:
+- Пользователь: "нарисуй котика" → Ответ: "Вот милый котик!" + [IMAGE:a cute cat sitting on a windowsill, fluffy orange fur, big eyes, soft lighting]
+- Пользователь: "сделай логотип для моей компании" → Ответ: "Вот несколько вариантов логотипов..." + [IMAGE:modern minimalist logo design for a tech company, blue gradient, geometric shapes]
+
+Если пользователь НЕ просит создать изображение, НЕ используй метку [IMAGE].`;
+                
+                const messages = [
+                    { role: 'system', content: systemPrompt },
+                    ...currentChat.messages.map(m => ({ role: m.role, content: m.content })),
+                    { role: 'user', content: msg }
+                ];
+                
+                const res = await API.streamPost('/api/chat?stream=true', { model: selectedModel, messages });
+                
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+                                if (data.content) {
+                                    fullContent += data.content;
+                                    contentDiv.innerHTML = marked.parse(fullContent);
+                                    processCodeBlocks(contentDiv);
+                                    renderMermaid(contentDiv);
+                                    renderLatex(contentDiv);
+                                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                                }
+                                if (data.done) {
+                                    if (data.full) fullContent = data.full;
+                                    isStreaming = false;
+                                    contentDiv.classList.remove('typing-cursor');
+                                    contentDiv.innerHTML = marked.parse(fullContent);
+                                    processCodeBlocks(contentDiv);
+                                    renderMermaid(contentDiv);
+                                    renderLatex(contentDiv);
+                                }
+                            } catch (e) { console.error('Parse error:', e); }
+                        }
+                    }
+                }
+
+                currentChat.messages.push({ role: 'user', content: msg });
+                currentChat.messages.push({ role: 'assistant', content: fullContent });
+                saveCurrentChat();
+                generateTitle();
+
+            } catch (e) {
+                console.error('Fetch error:', e);
+                contentDiv.classList.remove('typing-cursor');
+                chatContainer.removeChild(msgDiv);
+                addMessage('assistant', 'Ошибка: ' + e.message);
+            }
+            sendBtn.disabled = false;
+        }
+
+        loadModels();
+        loadChats();
+        loadWordsBalance();
+        
+        // Check for message from clicker
+        const urlParams = new URLSearchParams(window.location.search);
+        const prefillMessage = urlParams.get('message');
+        if (prefillMessage) {
+            setTimeout(() => {
+                if (!currentChat) {
+                    createNewChat().then(() => {
+                        messageInput.value = decodeURIComponent(prefillMessage);
+                    });
+                } else {
+                    messageInput.value = decodeURIComponent(prefillMessage);
+                }
+                window.history.replaceState({}, '', window.location.pathname);
+            }, 500);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Clicker - AI Agregator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #0d0d12; color: #e0e0e5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem; }
+        
+        .header { width: 100%; max-width: 600px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header a { color: #a0a0b0; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; transition: color 0.2s; }
+        .header a:hover { color: #e0e0e5; }
+        .header svg { width: 18px; height: 18px; }
+        
+        .stats { display: flex; gap: 2rem; margin-bottom: 2rem; }
+        .stat { text-align: center; }
+        .stat-value { font-size: 2.5rem; font-weight: 800; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .stat-label { font-size: 0.85rem; color: #6a6a7a; margin-top: 0.25rem; }
+        
+        .click-area { width: 280px; height: 280px; border-radius: 50%; background: linear-gradient(135deg, #1a1a24 0%, #16161e 100%); border: 4px solid #2a2a3a; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.1s; user-select: none; position: relative; }
+        .click-area:hover { border-color: #6366f1; box-shadow: 0 0 40px rgba(99, 102, 241, 0.3); }
+        .click-area:active { transform: scale(0.95); background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+        
+        .click-count { font-size: 4rem; font-weight: 800; color: #fff; }
+        .click-power { position: absolute; bottom: 20px; font-size: 0.9rem; color: #6a6a7a; }
+        
+        .progress-bar { width: 100%; max-width: 280px; height: 8px; background: #1a1a24; border-radius: 4px; margin-top: 1rem; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 4px; transition: width 0.1s; }
+        
+        .word-counter { width: 100%; max-width: 600px; margin-top: 2rem; text-align: center; }
+        .word-counter h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .word-counter p { color: #6a6a7a; font-size: 0.9rem; }
+        .word-counter .words-value { font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .auto-income { width: 100%; max-width: 600px; margin-top: 1rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; text-align: center; color: #22c55e; font-size: 0.9rem; }
+        .auto-income span { font-weight: 700; }
+        
+        .upgrades { width: 100%; max-width: 600px; margin-top: 2rem; }
+        .upgrades h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; text-align: center; }
+        
+        .upgrade { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; margin-bottom: 0.75rem; transition: all 0.2s; }
+        .upgrade:hover { border-color: #6366f1; }
+        .upgrade-icon { width: 48px; height: 48px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+        .upgrade-info { flex: 1; }
+        .upgrade-info h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .upgrade-info p { font-size: 0.8rem; color: #6a6a7a; }
+        .upgrade-info .purchased { font-size: 0.75rem; color: #22c55e; margin-top: 0.25rem; }
+        .upgrade-btn { padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+        .upgrade-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4); }
+        .upgrade-btn:disabled { background: #2a2a3a; cursor: not-allowed; transform: none; box-shadow: none; }
+        .upgrade-btn.maxed { background: #22c55e; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            На главную
+        </a>
+        <a href="/app">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Открыть чат
+        </a>
+    </div>
+    
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">AI Clicker</h1>
+    <p style="color: #6a6a7a; margin-bottom: 2rem;">Кликай чтобы заработать слова!</p>
+    
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-value" id="total-clicks">0</div>
+            <div class="stat-label">Всего кликов</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="total-words">0</div>
+            <div class="stat-label">Заработано слов</div>
+        </div>
+    </div>
+    
+    <div class="click-area" id="click-area">
+        <div class="click-count" id="click-count">0</div>
+        <div class="click-power" id="click-power">x1</div>
+    </div>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+    </div>
+    
+    <div class="word-counter">
+        <h3>Твой баланс:</h3>
+        <div class="words-value" id="words-balance">0</div>
+        <p>слов</p>
+    </div>
+    
+    <div class="auto-income" id="auto-income" style="display: none;">
+        <span id="auto-rate">0</span> слов в минуту (автодобыча)
+    </div>
+    
+    <div class="upgrades">
+        <h3>Улучшения</h3>
+        
+        <div class="upgrade">
+            <div class="upgrade-icon">⚡</div>
+            <div class="upgrade-info">
+                <h4>Сила клика</h4>
+                <p>Клики дают больше слов</p>
+                <div class="purchased" id="click-power-purchased">Куплено: 0</div>
+            </div>
+            <button class="upgrade-btn" id="buy-click-power" onclick="buyClickPower()">
+                <span id="click-power-cost">10</span> слов
+            </button>
+        </div>
+        
+        <div class="upgrade">
+            <div class="upgrade-icon">🤖</div>
+            <div class="upgrade-info">
+                <h4>Автодобыча</h4>
+                <p>Получай слова автоматически</p>
+                <div class="purchased" id="auto-purchased">Куплено: 0/10</div>
+            </div>
+            <button class="upgrade-btn" id="buy-auto" onclick="buyAuto()">
+                <span id="auto-cost">100</span> слов
+            </button>
+        </div>
+    </div>
+    
+    <script src="/config.js"></script>
+    <script>
+        const COST_PER_WORD = 5;
+        let totalClicks = 0;
+        let wordsBalance = 0;
+        let currentClicks = 0;
+        let clickPower = 1;
+        let clickPowerPurchased = 0;
+        let clickPowerBaseCost = 10;
+        let clickPowerCost = 10;
+        let autoPurchased = 0;
+        let autoMax = 10;
+        let autoBaseCost = 100;
+        let autoCost = 100;
+        let autoInterval = null;
+        let lastSave = 0;
+        
+        const clickArea = document.getElementById('click-area');
+        const clickCount = document.getElementById('click-count');
+        const progressFill = document.getElementById('progress-fill');
+        
+        async function loadClicks() {
+            try {
+                const data = await API.get('/api/clicks');
+                totalClicks = data.total_clicks || 0;
+                wordsBalance = data.words_balance || 0;
+                currentClicks = data.current_clicks || 0;
+                clickPowerPurchased = data.click_power_purchased || 0;
+                clickPower = 1 + clickPowerPurchased;
+                clickPowerCost = calculateCost(clickPowerBaseCost, clickPowerPurchased);
+                autoPurchased = data.auto_purchased || 0;
+                autoCost = calculateCost(autoBaseCost, autoPurchased);
+                updateDisplay();
+                updateUpgradeButtons();
+                startAutoIncome();
+            } catch (e) { console.error('Ошибка загрузки:', e); }
+        }
+        
+        function calculateCost(base, purchased) {
+            if (purchased === 0) return base;
+            let cost = base;
+            for (let i = 0; i < purchased; i++) {
+                cost = Math.floor(cost * 1.5);
+            }
+            return cost;
+        }
+        
+        async function saveClicks() {
+            const now = Date.now();
+            if (now - lastSave < 500) return;
+            lastSave = now;
+            
+            try {
+                await API.post('/api/clicks', {
+                    total_clicks: totalClicks,
+                    words_balance: wordsBalance,
+                    current_clicks: currentClicks,
+                    click_power_purchased: clickPowerPurchased,
+                    auto_purchased: autoPurchased
+                });
+            } catch (e) { console.error('Ошибка сохранения:', e); }
+        }
+        
+        function updateDisplay() {
+            document.getElementById('total-clicks').textContent = Math.round(totalClicks);
+            document.getElementById('total-words').textContent = wordsBalance.toFixed(1);
+            document.getElementById('words-balance').textContent = wordsBalance.toFixed(1);
+            clickCount.textContent = currentClicks.toFixed(1);
+            document.getElementById('click-power').textContent = 'x' + clickPower;
+            progressFill.style.width = (currentClicks / COST_PER_WORD * 100) + '%';
+        }
+        
+        function updateUpgradeButtons() {
+            document.getElementById('click-power-purchased').textContent = 'Куплено: ' + clickPowerPurchased;
+            document.getElementById('click-power-cost').textContent = clickPowerCost;
+            document.getElementById('buy-click-power').disabled = wordsBalance < clickPowerCost;
+            
+            document.getElementById('auto-purchased').textContent = 'Куплено: ' + autoPurchased + '/' + autoMax;
+            document.getElementById('auto-cost').textContent = autoCost;
+            
+            if (autoPurchased >= autoMax) {
+                document.getElementById('buy-auto').disabled = true;
+                document.getElementById('buy-auto').classList.add('maxed');
+                document.getElementById('buy-auto').textContent = 'МАКСИМУМ';
+            } else {
+                document.getElementById('buy-auto').disabled = wordsBalance < autoCost;
+                document.getElementById('buy-auto').classList.remove('maxed');
+            }
+            
+            const autoIncome = document.getElementById('auto-income');
+            if (autoPurchased > 0) {
+                autoIncome.style.display = 'block';
+                document.getElementById('auto-rate').textContent = (autoPurchased * 0.3).toFixed(1);
+            }
+        }
+        
+        function startAutoIncome() {
+            if (autoInterval) clearInterval(autoInterval);
+            if (autoPurchased > 0) {
+                autoInterval = setInterval(() => {
+                    const wordsPerTick = autoPurchased * 0.3 / 60;
+                    wordsBalance += wordsPerTick;
+                    totalClicks += 0;
+                    updateDisplay();
+                    saveClicks();
+                    updateUpgradeButtons();
+                }, 1000);
+            }
+        }
+        
+        async function buyClickPower() {
+            if (wordsBalance < clickPowerCost) return;
+            wordsBalance -= clickPowerCost;
+            clickPowerPurchased++;
+            clickPower = 1 + clickPowerPurchased;
+            clickPowerCost = calculateCost(clickPowerBaseCost, clickPowerPurchased);
+            updateDisplay();
+            updateUpgradeButtons();
+            await saveClicks();
+        }
+        
+        async function buyAuto() {
+            if (wordsBalance < autoCost || autoPurchased >= autoMax) return;
+            wordsBalance -= autoCost;
+            autoPurchased++;
+            autoCost = calculateCost(autoBaseCost, autoPurchased);
+            updateDisplay();
+            updateUpgradeButtons();
+            startAutoIncome();
+            await saveClicks();
+        }
+        
+        clickArea.addEventListener('click', () => {
+            totalClicks++;
+            currentClicks += clickPower;
+            updateDisplay();
+            saveClicks();
+            
+            while (currentClicks >= COST_PER_WORD) {
+                currentClicks -= COST_PER_WORD;
+                wordsBalance++;
+                updateDisplay();
+                updateUpgradeButtons();
+            }
+        });
+        
+        clickArea.addEventListener('mousedown', () => clickArea.classList.add('active'));
+        clickArea.addEventListener('mouseup', () => clickArea.classList.remove('active'));
+        clickArea.addEventListener('mouseleave', () => clickArea.classList.remove('active'));
+        
+        loadClicks();
+    </script>
+</body>
+</html>

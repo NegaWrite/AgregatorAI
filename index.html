@@ -3,636 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agregator AI</title>
+    <title>AI Agregator - Локальный AI Аггрегатор</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Стили остаются прежними, но добавим пару новых классов */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #0d0d12; color: #e0e0e5; min-height: 100vh; }
+        
+        .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; background: linear-gradient(180deg, #0d0d12 0%, #12121a 50%, #0d0d12 100%); }
+        
+        .logo { width: 120px; height: 120px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 30px; display: flex; align-items: center; justify-content: center; margin-bottom: 2rem; box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3); animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .logo svg { width: 60px; height: 60px; fill: white; }
+        
+        h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(135deg, #fff 0%, #a0a0b0 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 1.25rem; color: #6a6a7a; max-width: 600px; margin-bottom: 3rem; line-height: 1.6; }
+        
+        .cta-button { display: inline-flex; align-items: center; gap: 0.75rem; padding: 1.125rem 2.5rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; text-decoration: none; border-radius: 16px; font-weight: 600; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 10px 40px rgba(99, 102, 241, 0.4); }
+        .cta-button:hover { transform: translateY(-3px); box-shadow: 0 15px 50px rgba(99, 102, 241, 0.5); }
+        .cta-button svg { width: 24px; height: 24px; }
+        
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1200px; margin: 4rem auto; padding: 0 2rem; }
+        
+        .feature { background: linear-gradient(135deg, #1a1a24 0%, #16161e 100%); border: 1px solid #2a2a3a; border-radius: 20px; padding: 2rem; transition: all 0.3s; }
+        .feature:hover { transform: translateY(-5px); border-color: #6366f1; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+        
+        .feature-icon { width: 56px; height: 56px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
+        .feature-icon svg { width: 28px; height: 28px; stroke: #818cf8; fill: none; stroke-width: 2; }
+        
+        .feature h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; color: #fff; }
+        .feature p { color: #6a6a7a; line-height: 1.6; font-size: 0.95rem; }
+        
+        .section { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem; }
+        .section-title { font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 3rem; color: #fff; }
+        
+        .models-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+        .model-card { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 16px; padding: 1.5rem; text-align: center; transition: all 0.3s; }
+        .model-card:hover { border-color: #6366f1; }
+        .model-card h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .model-card span { font-size: 0.85rem; color: #6a6a7a; }
+        
+        .footer { text-align: center; padding: 2rem; color: #4a4a5a; font-size: 0.9rem; border-top: 1px solid #1a1a24; margin-top: 4rem; }
+        
+        .status-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 100px; font-size: 0.9rem; margin-bottom: 2rem; transition: all 0.3s; }
+        .status-badge.online { color: #22c55e; background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3); }
+        .status-badge.offline { color: #ef4444; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.3); }
+        .status-badge.checking { color: #f59e0b; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); }
+        #status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+        .status-badge.online #status-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .subtitle { font-size: 1rem; }
         }
-
-        body {
-            background-color: #2C2C2C;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .main-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            background-color: #2C2C2C;
-            color: #E0E0E0;
-        }
-
-        .left-panel {
-            width: 312px;
-            background-color: #404040;
-            display: flex;
-            flex-direction: column;
-            padding: 0 0 10px 0;
-            flex-shrink: 0;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-            padding: 10px;
-        }
-
-        .logo-placeholder {
-            width: 40px;
-            height: 40px;
-            background-color: #5E5E5E;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-
-        .logo-text {
-            font-size: 20px;
-            font-weight: bold;
-            color: white;
-        }
-
-        .chat-type-switch {
-            display: flex;
-            margin: 5px 10px 10px 10px;
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .type-btn {
-            flex: 1;
-            background-color: #404040;
-            border: 1px solid #5E5E5E;
-            color: #E0E0E0;
-            padding: 6px 0;
-            cursor: pointer;
-            font-size: 14px;
-            transition: 0.2s;
-        }
-
-        .type-btn.active {
-            background-color: #5E5E5E;
-            border-color: #7E7E7E;
-        }
-
-        .type-btn:first-child {
-            border-right: none;
-        }
-
-        .new-chat-btn {
-            background-color: #404040;
-            border: 1px solid #5E5E5E;
-            color: #E0E0E0;
-            padding: 5px 0;
-            margin: 0 10px 10px 10px;
-            cursor: pointer;
-            font-size: 14px;
-            border-radius: 3px;
-        }
-
-        .new-chat-btn:hover {
-            background-color: #4a4a4a;
-        }
-
-        .chats-list {
-            flex: 1;
-            overflow-y: auto;
-            background-color: #404040;
-            list-style: none;
-            margin: 0;
-            padding-left: 0;
-        }
-
-        .chat-item {
-            padding: 8px 15px;
-            border-bottom: 1px solid #5E5E5E;
-            cursor: pointer;
-            color: #E0E0E0;
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            position: relative;
-        }
-
-        .chat-item:hover {
-            background-color: #4f4f4f;
-        }
-
-        .chat-item.active {
-            background-color: #5E5E5E;
-        }
-
-        .admin-badge {
-            display: inline-block;
-            margin-left: 8px;
-            padding: 2px 6px;
-            background-color: #ff9800;
-            color: #000;
-            font-size: 10px;
-            border-radius: 10px;
-            font-weight: bold;
-        }
-
-        /* Контекстное меню */
-        .context-menu {
-            position: absolute;
-            background-color: #404040;
-            border: 1px solid #5E5E5E;
-            border-radius: 3px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-            z-index: 1000;
-            display: none;
-        }
-
-        .context-menu ul {
-            list-style: none;
-            padding: 5px 0;
-        }
-
-        .context-menu li {
-            padding: 8px 20px;
-            cursor: pointer;
-            color: #E0E0E0;
-            font-size: 14px;
-        }
-
-        .context-menu li:hover {
-            background-color: #5E5E5E;
-        }
-
-        /* Правая область */
-        .right-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: #2C2C2C;
-            min-width: 0;
-        }
-
-        .top-bar {
-            display: flex;
-            align-items: center;
-            padding: 10px 15px;
-            background-color: #2C2C2C;
-            border-bottom: 1px solid #404040;
-        }
-
-        .model-select {
-            background-color: #404040;
-            color: white;
-            border: 1px solid #5E5E5E;
-            padding: 5px 10px;
-            border-radius: 3px;
-            width: 150px;
-            margin-right: 20px;
-        }
-
-        .chat-name {
-            color: #E0E0E0;
-            font-size: 16px;
-            flex: 1;
-        }
-
-        .messages-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            background-color: #2C2C2C;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .message {
-            max-width: 70%;
-            padding: 8px 12px;
-            border-radius: 8px;
-            word-wrap: break-word;
-        }
-
-        .user-message {
-            align-self: flex-end;
-            background-color: #0b5e8a;
-            color: white;
-        }
-
-        .assistant-message {
-            align-self: flex-start;
-            background-color: #404040;
-            color: #E0E0E0;
-        }
-
-        .request-panel {
-            background-color: #2C2C2C;
-            border-top: 1px solid #404040;
-            padding: 10px 15px;
-        }
-
-        .request-box {
-            width: 100%;
-            padding: 8px 12px;
-            background-color: #404040;
-            border: 1px solid #5E5E5E;
-            color: #E0E0E0;
-            border-radius: 3px;
-            margin-bottom: 8px;
-        }
-
-        .request-options {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .checkbox-label {
-            color: #E0E0E0;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .submit-btn {
-            background-color: #404040;
-            border: 1px solid #5E5E5E;
-            color: #E0E0E0;
-            padding: 5px 15px;
-            cursor: pointer;
-            border-radius: 3px;
-        }
-
-        .submit-btn:hover {
-            background-color: #4a4a4a;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #2C2C2C;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #5E5E5E;
-            border-radius: 4px;
-        }
+        
+        .dropdown { position: relative; display: inline-block; }
+        
+        .dropdown-btn { display: inline-flex; align-items: center; gap: 0.75rem; padding: 1.125rem 2.5rem; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; text-decoration: none; border-radius: 16px; font-weight: 600; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 10px 40px rgba(245, 158, 11, 0.4); cursor: pointer; border: none; }
+        .dropdown-btn:hover { transform: translateY(-3px); box-shadow: 0 15px 50px rgba(245, 158, 11, 0.5); }
+        .dropdown-btn svg { width: 24px; height: 24px; transition: transform 0.2s; }
+        .dropdown.open .dropdown-btn svg { transform: rotate(180deg); }
+        
+        .dropdown-content { display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 0.5rem; background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5); z-index: 100; }
+        .dropdown.open .dropdown-content { display: block; }
+        
+        .dropdown-item { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; color: #a0a0b0; text-decoration: none; transition: all 0.2s; }
+        .dropdown-item:hover { background: #16161e; color: #e0e0e5; }
+        .dropdown-item svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .dropdown-item span { font-size: 0.95rem; }
+        .dropdown-item small { font-size: 0.75rem; color: #6a6a7a; display: block; }
+        
+        .dropdown-divider { height: 1px; background: #2a2a3a; margin: 0.25rem 0; }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <div class="left-panel">
-            <div class="logo-area">
-                <div class="logo-placeholder"></div>
-                <span class="logo-text">Agregator AI</span>
-            </div>
-
-            <!-- Переключатель типа чатов -->
-            <div class="chat-type-switch">
-                <button id="switch-private" class="type-btn active">Личные</button>
-                <button id="switch-public" class="type-btn">Общие</button>
-            </div>
-
-            <button id="new-chat" class="new-chat-btn">+ Новый чат</button>
-            <div class="chats-list" id="chats-list">
-                <!-- список чатов -->
-            </div>
+    <div class="hero">
+        <div class="logo">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         </div>
-
-        <div class="right-area">
-            <div class="top-bar">
-                <select id="model-select" class="model-select"></select>
-                <span id="chat-name" class="chat-name">Выберите чат</span>
-                <!-- Метка админа, видна только localhost -->
-                <span id="admin-badge" class="admin-badge" style="display: none;">Admin</span>
-            </div>
-
-            <div class="messages-area" id="messages-area"></div>
-
-            <div class="request-panel">
-                <input type="text" id="request-box" class="request-box" placeholder="Введите сообщение...">
-                <div class="request-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="internet-search"> Поиск в интернете
-                    </label>
-                    <button id="submit-btn" class="submit-btn">Отправить</button>
+        <h1>AI Agregator</h1>
+        <p class="subtitle">Локальный агрегатор AI моделей с поддержкой Ollama, генерацией изображений и удобным веб-интерфейсом</p>
+        <div class="status-badge" id="status-badge">
+            <span id="status-dot"></span>
+            <span id="status-text">Проверка...</span>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+            <a href="/app" class="cta-button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                Открыть чат
+            </a>
+            <a href="/clicker" class="cta-button" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); box-shadow: 0 10px 40px rgba(34, 197, 94, 0.4);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                AI Clicker
+            </a>
+            <div class="dropdown" id="tools-dropdown">
+                <button class="dropdown-btn" onclick="toggleDropdown()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    Инструменты
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="dropdown-content">
+                    <a href="/music" class="dropdown-item">
+                        <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        <div>
+                            <span>🎵 Музыка</span>
+                            <small>Генерация драм-паттернов</small>
+                        </div>
+                    </a>
+                    <a href="/translate" class="dropdown-item">
+                        <svg viewBox="0 0 24 24"><path d="M5 8l6 6M4 14l6-6 2-3M2 5h12M7 2v3"/><path d="M11 19l4-9 4 9M14 15h4"/></svg>
+                        <div>
+                            <span>🌐 Переводчик</span>
+                            <small>Перевод текста через AI</small>
+                        </div>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" style="opacity: 0.5; cursor: not-allowed;">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <div>
+                            <span>🖼️ Генерация картинок</span>
+                            <small>Скоро...</small>
+                        </div>
+                    </div>
+                    <div class="dropdown-item" style="opacity: 0.5; cursor: not-allowed;">
+                        <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                        <div>
+                            <span>🎤 TTS</span>
+                            <small>Скоро...</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Контекстное меню -->
-    <div id="context-menu" class="context-menu">
-        <ul>
-            <li id="menu-rename">Переименовать</li>
-            <li id="menu-delete">Удалить</li>
-        </ul>
+    
+    <div class="features">
+        <div class="feature">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
+            <h3>Множество моделей</h3>
+            <p>Поддержка локальных и облачных моделей: Qwen, DeepSeek, GLM, MiniMax и другие через Ollama API</p>
+        </div>
+        
+        <div class="feature">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            </div>
+            <h3>Генерация изображений</h3>
+            <p>Автоматическая генерация изображений через FLUX.1-dev при запросе пользователя</p>
+        </div>
+        
+        <div class="feature">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5z"/><path d="M20.5 10H19V8.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/><path d="M9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5z"/><path d="M3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z"/><path d="M14 14.5c0-.83.67-1.5 1.5-1.5h5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-5c-.83 0-1.5-.67-1.5-1.5z"/><path d="M15.5 19H14v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/><path d="M10 9.5C10 8.67 9.33 8 8.5 8h-5C2.67 8 2 8.67 2 9.5S2.67 11 3.5 11h5c.83 0 1.5-.67 1.5-1.5z"/><path d="M8.5 5H10V3.5C10 2.67 9.33 2 8.5 2S7 2.67 7 3.5 7.67 5 8.5 5z"/></svg>
+            </div>
+            <h3>Умная маршрутизация</h3>
+            <p>AI автоматически определяет когда нужно сгенерировать изображение и создаёт оптимальный промпт</p>
+        </div>
+        
+        <div class="feature">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h3>История чатов</h3>
+            <p>Сохранение истории переписок с возможностью удаления и редактирования названий</p>
+        </div>
+        
+        <div class="feature">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3>Приватность</h3>
+            <p>Все данные хранятся локально. Идентификация пользователей по IP и cookie</p>
+        </div>
+        
+        <div class="feature">
+            <div class="feature-icon">
+                <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
+            <h3>Форматирование</h3>
+            <p>Поддержка Markdown, код с подсветкой, таблицы, Mermaid диаграммы и LaTeX формулы</p>
+        </div>
+        
+        <div class="feature">
+            <div class="feature-icon" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);">
+                <svg viewBox="0 0 24 24" style="stroke: #ec4899;"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            </div>
+            <h3>Генерация музыки</h3>
+            <p>Создавай уникальные драм-паттерны с помощью AI и экспортируй в WAV</p>
+        </div>
     </div>
-
+    
+    <div class="section" style="background: linear-gradient(180deg, #0d0d12 0%, #12121a 50%, #0d0d12 100%); padding: 3rem 2rem; margin: 0;">
+        <h2 class="section-title">AI Clicker</h2>
+        <p style="text-align: center; color: #6a6a7a; max-width: 500px; margin: 0 auto 2rem;">Зарабатывай слова кликами! 5 кликов = 1 слово. Набранные слова отправляются напрямую в чат.</p>
+        <a href="/clicker" class="cta-button" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); box-shadow: 0 10px 40px rgba(34, 197, 94, 0.4); display: inline-flex;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 24px; height: 24px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l2 2"/></svg>
+            Попробовать
+        </a>
+    </div>
+    
+    <div class="section">
+        <h2 class="section-title">Поддерживаемые модели</h2>
+        <div class="models-grid" id="models-list">
+            <div class="model-card"><h4>Загрузка...</h4></div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>AI Agregator © 2026 | Работает на Ollama + FastAPI</p>
+    </div>
+    
+    <script src="/config.js"></script>
     <script>
-        // --- Конфигурация API ---
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:5000'          // локальный бэкенд
-            : 'http://26.128.11.168:5000';      // удалённый сервер (замените на ваш IP)
-
-        // --- Состояние приложения ---
-        let currentChatId = null;
-        let currentModel = '';
-        let chatType = 'private'; // 'private' или 'public'
-        let isAdmin = false;       // будет установлено после проверки
-
-        // --- DOM элементы ---
-        const chatsListEl = document.getElementById('chats-list');
-        const modelSelect = document.getElementById('model-select');
-        const chatNameEl = document.getElementById('chat-name');
-        const messagesArea = document.getElementById('messages-area');
-        const requestBox = document.getElementById('request-box');
-        const submitBtn = document.getElementById('submit-btn');
-        const newChatBtn = document.getElementById('new-chat');
-        const internetSearchCheck = document.getElementById('internet-search');
-        const switchPrivateBtn = document.getElementById('switch-private');
-        const switchPublicBtn = document.getElementById('switch-public');
-        const adminBadge = document.getElementById('admin-badge');
-        const contextMenu = document.getElementById('context-menu');
-        const menuRename = document.getElementById('menu-rename');
-        const menuDelete = document.getElementById('menu-delete');
-
-        let targetChatId = null; // для контекстного меню
-
-        // --- Определяем, админ ли мы (по факту загрузки страницы) ---
-        function checkAdmin() {
-            // Простейший способ: считаем админом, если открыто с localhost
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                isAdmin = true;
-                adminBadge.style.display = 'inline-block';
-            } else {
-                isAdmin = false;
-                adminBadge.style.display = 'none';
+        function toggleDropdown() {
+            const dropdown = document.getElementById('tools-dropdown');
+            dropdown.classList.toggle('open');
+        }
+        
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('tools-dropdown');
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
             }
-        }
-
-        // --- Загрузка моделей ---
-        function loadModels() {
-            fetch(`${API_BASE}/api/models`)
-                .then(res => res.json())
-                .then(models => {
-                    if (models.length === 0) {
-                        modelSelect.innerHTML = '<option>Нет моделей</option>';
-                    } else {
-                        models.forEach(model => {
-                            const option = document.createElement('option');
-                            option.value = model;
-                            option.textContent = model;
-                            modelSelect.appendChild(option);
-                        });
-                        currentModel = models[0];
-                    }
-                })
-                .catch(err => console.error('Ошибка загрузки моделей:', err));
-        }
-
-        // --- Загрузка списка чатов в зависимости от типа ---
-        function loadChats() {
-            const url = chatType === 'private' 
-                ? `${API_BASE}/api/private/chats`
-                : `${API_BASE}/api/public/chats`;
-            fetch(url)
-                .then(res => res.json())
-                .then(chats => {
-                    chatsListEl.innerHTML = '';
-                    chats.forEach(chat => {
-                        const div = document.createElement('div');
-                        div.className = 'chat-item' + (chat.id === currentChatId ? ' active' : '');
-                        div.dataset.id = chat.id;
-                        div.textContent = chat.name.length > 35 ? chat.name.slice(0,32)+'...' : chat.name;
-                        div.addEventListener('click', () => switchChat(chat.id));
-                        div.addEventListener('contextmenu', (e) => showContextMenu(e, chat.id));
-                        chatsListEl.appendChild(div);
-                    });
-                    // Если нет активного чата, сбросить область сообщений
-                    if (!chats.find(c => c.id === currentChatId)) {
-                        currentChatId = null;
-                        messagesArea.innerHTML = '';
-                        chatNameEl.textContent = 'Выберите чат';
-                    }
-                });
-        }
-
-        // --- Переключение чата ---
-        function switchChat(chatId) {
-            currentChatId = chatId;
-            document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-            const activeEl = document.querySelector(`.chat-item[data-id="${chatId}"]`);
-            if (activeEl) activeEl.classList.add('active');
-            loadMessages(chatId);
-            chatNameEl.textContent = activeEl ? activeEl.textContent : 'Чат';
-        }
-
-        // --- Загрузка сообщений ---
-        function loadMessages(chatId) {
-            const url = chatType === 'private'
-                ? `${API_BASE}/api/private/messages?chat_id=${chatId}`
-                : `${API_BASE}/api/public/messages?chat_id=${chatId}`;
-            fetch(url)
-                .then(res => res.json())
-                .then(messages => {
-                    messagesArea.innerHTML = '';
-                    messages.forEach(msg => {
-                        const msgDiv = document.createElement('div');
-                        msgDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'assistant-message'}`;
-                        msgDiv.textContent = msg.content;
-                        messagesArea.appendChild(msgDiv);
-                    });
-                    messagesArea.scrollTop = messagesArea.scrollHeight;
-                });
-        }
-
-        // --- Создание нового чата ---
-        function createNewChat() {
-            const url = chatType === 'private'
-                ? `${API_BASE}/api/private/chats/new`
-                : `${API_BASE}/api/public/chats/new`;
-            fetch(url, { method: 'POST' })
-                .then(res => res.json())
-                .then(newChat => {
-                    loadChats();
-                    switchChat(newChat.id);
-                });
-        }
-
-        // --- Отправка сообщения ---
-        function sendMessage() {
-            const text = requestBox.value.trim();
-            if (!text || !currentChatId) return;
-            requestBox.value = '';
-
-            // Показываем сообщение пользователя
-            const userMsgDiv = document.createElement('div');
-            userMsgDiv.className = 'message user-message';
-            userMsgDiv.textContent = text;
-            messagesArea.appendChild(userMsgDiv);
-            messagesArea.scrollTop = messagesArea.scrollHeight;
-
-            submitBtn.disabled = true;
-
-            const url = chatType === 'private'
-                ? `${API_BASE}/api/private/chat`
-                : `${API_BASE}/api/public/chat`;
-
-            fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: text,
-                    chat_id: currentChatId,
-                    model: currentModel,
-                    internet_search: internetSearchCheck.checked
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.reply) {
-                    const assistantDiv = document.createElement('div');
-                    assistantDiv.className = 'message assistant-message';
-                    assistantDiv.textContent = data.reply;
-                    messagesArea.appendChild(assistantDiv);
-                } else if (data.error) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'message assistant-message';
-                    errorDiv.textContent = 'Ошибка: ' + data.error;
-                    messagesArea.appendChild(errorDiv);
+        });
+        
+        async function checkServerStatus() {
+            const badge = document.getElementById('status-badge');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            
+            badge.className = 'status-badge checking';
+            statusText.textContent = 'Проверка...';
+            
+            try {
+                const data = await API.get('/api/models');
+                const modelCount = data.models?.length || 0;
+                
+                if (modelCount > 0) {
+                    badge.className = 'status-badge online';
+                    statusText.textContent = `Онлайн • ${modelCount} моделей`;
+                } else {
+                    badge.className = 'status-badge online';
+                    statusText.textContent = 'Онлайн • Нет моделей';
                 }
-                messagesArea.scrollTop = messagesArea.scrollHeight;
-                submitBtn.disabled = false;
-            })
-            .catch(err => {
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'message assistant-message';
-                errorDiv.textContent = 'Ошибка сети: ' + err;
-                messagesArea.appendChild(errorDiv);
-                submitBtn.disabled = false;
-            });
-        }
-
-        // --- Контекстное меню ---
-        function showContextMenu(e, chatId) {
-            e.preventDefault();
-            targetChatId = chatId;
-            contextMenu.style.display = 'block';
-            contextMenu.style.left = e.pageX + 'px';
-            contextMenu.style.top = e.pageY + 'px';
-
-            // Для общих чатов удаление доступно только админу
-            if (chatType === 'public' && !isAdmin) {
-                menuDelete.style.display = 'none';
-            } else {
-                menuDelete.style.display = 'block';
+            } catch (e) {
+                badge.className = 'status-badge offline';
+                statusText.textContent = 'Оффлайн';
             }
         }
-
-        // --- Удаление чата ---
-        function deleteChat() {
-            if (!targetChatId) return;
-            if (!confirm('Удалить этот чат?')) return;
-
-            const url = chatType === 'private'
-                ? `${API_BASE}/api/private/chats/${targetChatId}`
-                : `${API_BASE}/api/public/chats/${targetChatId}`;
-
-            fetch(url, { method: 'DELETE' })
-                .then(res => {
-                    if (res.ok) {
-                        if (currentChatId === targetChatId) {
-                            currentChatId = null;
-                            messagesArea.innerHTML = '';
-                            chatNameEl.textContent = 'Выберите чат';
-                        }
-                        loadChats();
-                    } else {
-                        alert('Не удалось удалить чат');
-                    }
-                    hideContextMenu();
+        
+        async function loadModels() {
+            try {
+                const data = await API.get('/api/models');
+                const grid = document.getElementById('models-list');
+                grid.innerHTML = '';
+                
+                data.models?.forEach(m => {
+                    const card = document.createElement('div');
+                    card.className = 'model-card';
+                    const params = m.details?.parameter_size || '?';
+                    card.innerHTML = `<h4>${m.name.split(':')[0]}</h4><span>${params}</span>`;
+                    grid.appendChild(card);
                 });
-        }
-
-        // --- Переименование чата ---
-        function renameChat() {
-            if (!targetChatId) return;
-            const newName = prompt('Введите новое название чата:', '');
-            if (!newName) return;
-
-            const url = chatType === 'private'
-                ? `${API_BASE}/api/private/chats/${targetChatId}`
-                : `${API_BASE}/api/public/chats/${targetChatId}`;
-
-            fetch(url, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.name) {
-                    loadChats();
-                    if (currentChatId === targetChatId) {
-                        chatNameEl.textContent = data.name;
-                    }
+                
+                if (!data.models?.length) {
+                    grid.innerHTML = '<div class="model-card"><h4>Нет моделей</h4><span>Запустите Ollama</span></div>';
                 }
-                hideContextMenu();
-            });
-        }
-
-        function hideContextMenu() {
-            contextMenu.style.display = 'none';
-            targetChatId = null;
-        }
-
-        // --- Переключение типа чатов ---
-        function setChatType(type) {
-            chatType = type;
-            if (type === 'private') {
-                switchPrivateBtn.classList.add('active');
-                switchPublicBtn.classList.remove('active');
-            } else {
-                switchPublicBtn.classList.add('active');
-                switchPrivateBtn.classList.remove('active');
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('models-list').innerHTML = '<div class="model-card"><h4>Ошибка</h4><span>Сервер недоступен</span></div>';
             }
-            currentChatId = null;
-            messagesArea.innerHTML = '';
-            chatNameEl.textContent = 'Выберите чат';
-            loadChats();
         }
-
-        // --- Инициализация и события ---
-        document.addEventListener('click', hideContextMenu);
-        document.addEventListener('contextmenu', (e) => {
-            if (!e.target.closest('.chat-item')) hideContextMenu();
-        });
-
-        menuRename.addEventListener('click', renameChat);
-        menuDelete.addEventListener('click', deleteChat);
-
-        switchPrivateBtn.addEventListener('click', () => setChatType('private'));
-        switchPublicBtn.addEventListener('click', () => setChatType('public'));
-
-        newChatBtn.addEventListener('click', createNewChat);
-        submitBtn.addEventListener('click', sendMessage);
-        requestBox.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        modelSelect.addEventListener('change', (e) => {
-            currentModel = e.target.value;
-        });
-
-        // Старт
-        checkAdmin();
+        
+        checkServerStatus();
         loadModels();
-        loadChats(); // загружаем приватные по умолчанию
+        
+        setInterval(checkServerStatus, 30000);
     </script>
 </body>
 </html>

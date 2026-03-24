@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Music - AI Agregator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #0d0d12; color: #e0e0e5; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem; }
+        
+        .header { width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .header a { color: #a0a0b0; text-decoration: none; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem; transition: color 0.2s; }
+        .header a:hover { color: #e0e0e5; }
+        .header svg { width: 18px; height: 18px; }
+        
+        h1 { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center; }
+        .subtitle { color: #6a6a7a; margin-bottom: 2rem; text-align: center; }
+        
+        .mode-selector { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .mode-btn { padding: 0.75rem 1.5rem; background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 10px; color: #a0a0b0; cursor: pointer; transition: all 0.2s; }
+        .mode-btn:hover { border-color: #6366f1; color: #e0e0e5; }
+        .mode-btn.active { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-color: transparent; color: white; }
+        
+        .input-section { width: 100%; max-width: 800px; margin-bottom: 2rem; }
+        .input-section textarea { width: 100%; padding: 1rem; background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 12px; color: #e0e0e5; font-family: inherit; font-size: 0.95rem; resize: vertical; min-height: 120px; }
+        .input-section textarea:focus { outline: none; border-color: #6366f1; }
+        .input-section textarea::placeholder { color: #5a5a6a; }
+        
+        .send-btn { width: 100%; max-width: 800px; padding: 1rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.3s; margin-bottom: 2rem; }
+        .send-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); }
+        .send-btn:disabled { background: #2a2a3a; cursor: not-allowed; transform: none; box-shadow: none; }
+        
+        .controls { width: 100%; max-width: 800px; display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .control { display: flex; align-items: center; gap: 0.5rem; background: #1a1a24; padding: 0.75rem 1rem; border-radius: 10px; }
+        .control label { font-size: 0.85rem; color: #6a6a7a; }
+        .control input { width: 80px; padding: 0.5rem; background: #16161e; border: 1px solid #2a2a3a; border-radius: 6px; color: #e0e0e5; text-align: center; }
+        .control input:focus { outline: none; border-color: #6366f1; }
+        
+        .output-section { width: 100%; max-width: 800px; }
+        .output-section h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #a0a0b0; }
+        
+        .player { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem; }
+        .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .player-title { font-weight: 600; }
+        .player-actions { display: flex; gap: 0.5rem; }
+        .player-btn { padding: 0.5rem 1rem; background: #16161e; border: 1px solid #2a2a3a; border-radius: 8px; color: #a0a0b0; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+        .player-btn:hover { border-color: #6366f1; color: #e0e0e5; }
+        .player-btn.primary { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; color: white; }
+        
+        .pattern-display { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; background: #0d0d12; padding: 1rem; border-radius: 8px; overflow-x: auto; white-space: pre; color: #a0a0b0; margin-bottom: 1rem; max-height: 300px; overflow-y: auto; }
+        
+        .playhead { display: flex; gap: 0; }
+        .playhead-step { width: 20px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #2a2a3a; font-size: 0.7rem; color: #4a4a5a; }
+        .playhead-step.active { background: #6366f1; border-color: #6366f1; color: white; }
+        
+        .track-labels { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.5rem; }
+        .track-label { height: 30px; display: flex; align-items: center; font-size: 0.75rem; color: #6a6a7a; }
+        
+        .tracks { display: flex; flex-direction: column; gap: 4px; }
+        .track-row { display: flex; align-items: center; }
+        .track-name { width: 100px; font-size: 0.75rem; color: #6a6a7a; }
+        .track-notes { display: flex; gap: 0; }
+        .note-cell { width: 20px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid #2a2a3a; font-size: 0.7rem; color: #4a4a5a; cursor: pointer; transition: all 0.1s; }
+        .note-cell:hover { border-color: #6366f1; }
+        .note-cell.active { background: #22c55e; border-color: #22c55e; color: white; }
+        .note-cell.playing { background: #6366f1; border-color: #6366f1; color: white; }
+        
+        .help-box { background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; padding: 1rem; margin-top: 1rem; font-size: 0.85rem; color: #a0a0b0; }
+        .help-box h4 { color: #818cf8; margin-bottom: 0.5rem; }
+        .help-box code { background: #0d0d12; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
+        
+        .loading { text-align: center; padding: 2rem; color: #6a6a7a; }
+        .loading::before { content: ''; width: 24px; height: 24px; border: 3px solid #2a2a3a; border-top-color: #6366f1; border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; margin-right: 0.5rem; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            На главную
+        </a>
+        <a href="/app">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Чат
+        </a>
+    </div>
+    
+    <h1>🎵 AI Music Generator</h1>
+    <p class="subtitle">Опиши музыку которую хочешь создать</p>
+    
+    <div class="controls" style="margin-bottom: 1rem;">
+        <div class="control" style="flex: 1;">
+            <label>Модель:</label>
+            <select id="model-select" style="padding: 0.5rem; background: #16161e; border: 1px solid #2a2a3a; border-radius: 6px; color: #e0e0e5; min-width: 150px;">
+                <option value="">Загрузка...</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="mode-selector">
+        <button class="mode-btn active" onclick="setMode('simple')">Простой режим</button>
+        <button class="mode-btn" onclick="setMode('experimental')">Экспериментальный</button>
+    </div>
+    
+    <div class="controls">
+        <div class="control">
+            <label>BPM:</label>
+            <input type="number" id="bpm" value="120" min="60" max="300">
+        </div>
+        <div class="control">
+            <label>Шагов:</label>
+            <input type="number" id="steps" value="16" min="4" max="64">
+        </div>
+        <div class="control">
+            <label>Секций:</label>
+            <input type="number" id="sections" value="4" min="1" max="16">
+        </div>
+    </div>
+    
+    <div class="input-section">
+        <textarea id="prompt" placeholder="Например: мощный драм и бейс трек с агрессивным киком и глубоким снейром..."></textarea>
+    </div>
+    
+    <button class="send-btn" id="send-btn" onclick="generateMusic()">Сгенерировать музыку</button>
+    
+    <div class="output-section" id="output" style="display: none;">
+        <h3>Результат:</h3>
+        <div class="player">
+            <div class="player-header">
+                <span class="player-title">AI Beat</span>
+                <div class="player-actions">
+                    <button class="player-btn" id="play-btn" onclick="togglePlay()">▶ Воспроизвести</button>
+                    <button class="player-btn" onclick="stopPlay()">⏹ Стоп</button>
+                    <button class="player-btn" onclick="downloadWav()">💾 WAV</button>
+                </div>
+            </div>
+            <div id="pattern-display"></div>
+            <div id="tracks-container"></div>
+        </div>
+        
+        <div class="help-box">
+            <h4>Формат музыки:</h4>
+            <p><strong>Простой:</strong> Генерирует 4 секции по 16 шагов автоматически</p>
+            <p><strong>Экспериментальный:</strong> Укажи <code>Row XX</code> для размещения нот на конкретной строке</p>
+            <p style="margin-top: 0.5rem;">Пример: <code>Row 05 | C | -- | -- | Xx</code></p>
+        </div>
+    </div>
+    
+    <div id="loading" class="loading" style="display: none;">Генерация музыки...</div>
+    
+    <script src="/config.js"></script>
+    <script>
+        let currentMode = 'simple';
+        let currentPattern = null;
+        let isPlaying = false;
+        let playInterval = null;
+        let currentStep = 0;
+        let audioContext = null;
+        let availableModels = [];
+        
+        async function loadModels() {
+            try {
+                const data = await API.get('/api/models');
+                const select = document.getElementById('model-select');
+                select.innerHTML = '';
+                
+                if (data.models && data.models.length > 0) {
+                    availableModels = data.models;
+                    data.models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.name;
+                        opt.textContent = m.name.split(':')[0];
+                        select.appendChild(opt);
+                    });
+                    select.value = data.models[0].name;
+                } else {
+                    select.innerHTML = '<option value="llama3">llama3</option>';
+                }
+            } catch (e) {
+                console.error('Failed to load models:', e);
+                document.getElementById('model-select').innerHTML = '<option value="llama3">llama3</option>';
+            }
+        }
+        
+        loadModels();
+        
+        const NOTES = {
+            'C': 261.63, 'C#': 277.18, 'Db': 277.18, 'D': 293.66, 'D#': 311.13, 'Eb': 311.13,
+            'E': 329.63, 'F': 349.23, 'F#': 369.99, 'Gb': 369.99, 'G': 392.00, 'G#': 415.30,
+            'Ab': 415.30, 'A': 440.00, 'A#': 466.16, 'Bb': 466.16, 'B': 493.88,
+            '--': 0, 'Xx': 0, 'x': 0, '-': 0
+        };
+        
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+        
+        function parsePattern(text) {
+            const lines = text.split('\n');
+            const pattern = {
+                steps: parseInt(document.getElementById('steps').value) || 16,
+                sections: parseInt(document.getElementById('sections').value) || 4,
+                tracks: { kick: [], snare: [], hihat: [], perc: [] }
+            };
+            
+            for (let s = 0; s < pattern.sections; s++) {
+                pattern.tracks.kick.push(new Array(pattern.steps).fill(false));
+                pattern.tracks.snare.push(new Array(pattern.steps).fill(false));
+                pattern.tracks.hihat.push(new Array(pattern.steps).fill(false));
+                pattern.tracks.perc.push(new Array(pattern.steps).fill(false));
+            }
+            
+            let currentSection = 0;
+            
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line || line.startsWith('#') || line.startsWith('//')) return;
+                
+                if (currentMode === 'experimental' && line.match(/Row\s*(\d+)/i)) {
+                    const match = line.match(/Row\s*(\d+)/i);
+                    currentSection = Math.floor((parseInt(match[1]) - 1) / pattern.steps);
+                    line = line.replace(/Row\s*\d+\s*/i, '');
+                }
+                
+                if (line.match(/Row\s*\d+/i)) return;
+                
+                const parts = line.split(/\s*\|\s*/).map(p => p.trim()).filter(p => p);
+                if (parts.length >= 2) {
+                    const [, kick, snare, hihat, perc] = parts;
+                    
+                    for (let step = 0; step < pattern.steps; step++) {
+                        if (kick && kick[step] && kick[step] !== '-' && kick[step] !== 'x') {
+                            pattern.tracks.kick[currentSection][step] = true;
+                        }
+                        if (snare && snare[step] && snare[step] !== '-' && snare[step] !== 'x') {
+                            pattern.tracks.snare[currentSection][step] = true;
+                        }
+                        if (hihat && hihat[step] && hihat[step] !== '-') {
+                            pattern.tracks.hihat[currentSection][step] = true;
+                        }
+                        if (perc && perc[step] && perc[step] !== '-' && perc[step] !== 'x') {
+                            pattern.tracks.perc[currentSection][step] = true;
+                        }
+                    }
+                    
+                    if (currentSection < pattern.sections - 1 && currentMode === 'simple') {
+                        currentSection++;
+                    }
+                }
+            });
+            
+            return pattern;
+        }
+        
+        function displayPattern(pattern) {
+            const display = document.getElementById('pattern-display');
+            const container = document.getElementById('tracks-container');
+            
+            display.innerHTML = '';
+            
+            const trackNames = ['kick', 'snare', 'hihat', 'perc'];
+            const trackLabels = ['🥁 Kick', '🥁 Snare', '🎛️ Hi-Hat', '🥁 Perc'];
+            
+            let tracksHtml = '';
+            
+            for (let s = 0; s < pattern.sections; s++) {
+                tracksHtml += `<div style="margin-bottom: 16px; background: #16161e; border-radius: 8px; padding: 12px;">`;
+                tracksHtml += `<div style="font-size: 0.8rem; color: #818cf8; margin-bottom: 8px;">Секция ${s + 1}</div>`;
+                tracksHtml += `<div style="display: flex; flex-direction: column; gap: 4px;">`;
+                
+                trackNames.forEach((track, trackIdx) => {
+                    tracksHtml += `<div style="display: flex; align-items: center; gap: 8px;">`;
+                    tracksHtml += `<div style="width: 80px; font-size: 0.75rem; color: #6a6a7a;">${trackLabels[trackIdx]}</div>`;
+                    tracksHtml += `<div style="display: flex; gap: 2px;">`;
+                    
+                    for (let step = 0; step < pattern.steps; step++) {
+                        const active = pattern.tracks[track][s][step];
+                        const isDownbeat = step % 4 === 0;
+                        tracksHtml += `<div class="note-cell ${active ? 'active' : ''}" style="${isDownbeat ? 'border-color: #4a4a5a;' : ''}" data-track="${track}" data-section="${s}" data-step="${step}" onclick="toggleCell('${track}', ${s}, ${step})">${active ? '●' : ''}</div>`;
+                    }
+                    
+                    tracksHtml += '</div></div>';
+                });
+                
+                tracksHtml += '</div></div>';
+            }
+            
+            container.innerHTML = tracksHtml;
+        }
+        
+        function toggleCell(track, section, step) {
+            if (!currentPattern) return;
+            currentPattern.tracks[track][section][step] = !currentPattern.tracks[track][section][step];
+            displayPattern(currentPattern);
+        }
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playKick(time) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, time);
+            osc.frequency.exponentialRampToValueAtTime(30, time + 0.1);
+            gain.gain.setValueAtTime(1, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.3);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(time);
+            osc.stop(time + 0.3);
+        }
+        
+        function playSnare(time) {
+            const noise = audioContext.createBufferSource();
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.1, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            noise.buffer = buffer;
+            
+            const noiseGain = audioContext.createGain();
+            noiseGain.gain.setValueAtTime(0.5, time);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+            
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 1000;
+            
+            noise.connect(filter);
+            filter.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            noise.start(time);
+            noise.stop(time + 0.1);
+            
+            const osc = audioContext.createOscillator();
+            const oscGain = audioContext.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = 200;
+            oscGain.gain.setValueAtTime(0.5, time);
+            oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+            osc.connect(oscGain);
+            oscGain.connect(audioContext.destination);
+            osc.start(time);
+            osc.stop(time + 0.05);
+        }
+        
+        function playHihat(time, open = false) {
+            const noise = audioContext.createBufferSource();
+            const buffer = audioContext.createBuffer(1, audioContext.sampleRate * (open ? 0.3 : 0.05), audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            noise.buffer = buffer;
+            
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.3, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + (open ? 0.3 : 0.05));
+            
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 7000;
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            noise.start(time);
+            noise.stop(time + (open ? 0.3 : 0.05));
+        }
+        
+        function playPerc(time) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 800;
+            gain.gain.setValueAtTime(0.3, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(time);
+            osc.stop(time + 0.05);
+        }
+        
+        function togglePlay() {
+            if (isPlaying) {
+                stopPlay();
+            } else {
+                startPlay();
+            }
+        }
+        
+        function startPlay() {
+            if (!currentPattern) return;
+            initAudio();
+            isPlaying = true;
+            document.getElementById('play-btn').textContent = '⏸ Пауза';
+            
+            const bpm = parseInt(document.getElementById('bpm').value) || 120;
+            const stepTime = 60 / bpm / 4;
+            
+            playStep();
+            playInterval = setInterval(playStep, stepTime * 1000);
+        }
+        
+        function playStep() {
+            if (!currentPattern || !isPlaying) return;
+            
+            document.querySelectorAll('.note-cell').forEach(cell => {
+                cell.classList.remove('playing');
+            });
+            
+            const totalSteps = currentPattern.sections * currentPattern.steps;
+            const section = Math.floor(currentStep / currentPattern.steps);
+            const step = currentStep % currentPattern.steps;
+            
+            const time = audioContext.currentTime;
+            
+            if (currentPattern.tracks.kick[section][step]) playKick(time);
+            if (currentPattern.tracks.snare[section][step]) playSnare(time);
+            if (currentPattern.tracks.hihat[section][step]) playHihat(time, Math.random() > 0.8);
+            if (currentPattern.tracks.perc[section][step]) playPerc(time);
+            
+            const cells = document.querySelectorAll(`.note-cell[data-section="${section}"][data-step="${step}"]`);
+            cells.forEach(cell => cell.classList.add('playing'));
+            
+            currentStep = (currentStep + 1) % totalSteps;
+        }
+        
+        function stopPlay() {
+            isPlaying = false;
+            currentStep = 0;
+            if (playInterval) {
+                clearInterval(playInterval);
+                playInterval = null;
+            }
+            document.getElementById('play-btn').textContent = '▶ Воспроизвести';
+            document.querySelectorAll('.note-cell').forEach(cell => {
+                cell.classList.remove('playing');
+            });
+        }
+        
+        function renderKick(samples, startSample, sampleRate) {
+            const duration = 0.3;
+            const length = Math.floor(duration * sampleRate);
+            for (let i = 0; i < length && startSample + i < samples.length; i++) {
+                const t = i / sampleRate;
+                const freq = 150 * Math.exp(-t * 20);
+                const env = Math.exp(-t * 10);
+                const sample = Math.sin(2 * Math.PI * freq * t) * env;
+                const idx = startSample + i;
+                samples[idx] = (samples[idx] || 0) + sample * 0.8;
+            }
+        }
+        
+        function renderSnare(samples, startSample, sampleRate) {
+            const duration = 0.15;
+            const length = Math.floor(duration * sampleRate);
+            for (let i = 0; i < length && startSample + i < samples.length; i++) {
+                const t = i / sampleRate;
+                const noise = Math.random() * 2 - 1;
+                const env = Math.exp(-t * 20);
+                const tone = Math.sin(2 * Math.PI * 200 * t) * Math.exp(-t * 40);
+                const sample = noise * env * 0.5 + tone * env * 0.3;
+                const idx = startSample + i;
+                samples[idx] = (samples[idx] || 0) + sample;
+            }
+        }
+        
+        function renderHihat(samples, startSample, sampleRate, open = false) {
+            const duration = open ? 0.25 : 0.05;
+            const length = Math.floor(duration * sampleRate);
+            for (let i = 0; i < length && startSample + i < samples.length; i++) {
+                const t = i / sampleRate;
+                const noise = Math.random() * 2 - 1;
+                const env = Math.exp(-t * (open ? 8 : 40));
+                const sample = noise * env * 0.3;
+                const idx = startSample + i;
+                samples[idx] = (samples[idx] || 0) + sample;
+            }
+        }
+        
+        function renderPerc(samples, startSample, sampleRate) {
+            const duration = 0.08;
+            const length = Math.floor(duration * sampleRate);
+            for (let i = 0; i < length && startSample + i < samples.length; i++) {
+                const t = i / sampleRate;
+                const freq = 800 * Math.exp(-t * 30);
+                const env = Math.exp(-t * 50);
+                const sample = Math.sin(2 * Math.PI * freq * t) * env * 0.4;
+                const idx = startSample + i;
+                samples[idx] = (samples[idx] || 0) + sample;
+            }
+        }
+        
+        function downloadWav() {
+            if (!currentPattern) return;
+            initAudio();
+            
+            const bpm = parseInt(document.getElementById('bpm').value) || 120;
+            const stepTime = 60 / bpm / 4;
+            const totalSteps = currentPattern.sections * currentPattern.steps;
+            const duration = totalSteps * stepTime + 1;
+            const sampleRate = audioContext.sampleRate;
+            const samples = Math.ceil(duration * sampleRate);
+            
+            const leftChannel = new Float32Array(samples);
+            const rightChannel = new Float32Array(samples);
+            
+            for (let step = 0; step < totalSteps; step++) {
+                const section = Math.floor(step / currentPattern.steps);
+                const s = step % currentPattern.steps;
+                const startSample = Math.floor(step * stepTime * sampleRate);
+                
+                if (currentPattern.tracks.kick[section][s]) {
+                    renderKick(leftChannel, startSample, sampleRate);
+                    renderKick(rightChannel, startSample, sampleRate);
+                }
+                if (currentPattern.tracks.snare[section][s]) {
+                    renderSnare(leftChannel, startSample, sampleRate);
+                    renderSnare(rightChannel, startSample, sampleRate);
+                }
+                if (currentPattern.tracks.hihat[section][s]) {
+                    renderHihat(leftChannel, startSample, sampleRate, Math.random() > 0.8);
+                    renderHihat(rightChannel, startSample, sampleRate, Math.random() > 0.8);
+                }
+                if (currentPattern.tracks.perc[section][s]) {
+                    renderPerc(leftChannel, startSample, sampleRate);
+                    renderPerc(rightChannel, startSample, sampleRate);
+                }
+            }
+            
+            const buffer = audioContext.createBuffer(2, samples, sampleRate);
+            buffer.getChannelData(0).set(leftChannel);
+            buffer.getChannelData(1).set(rightChannel);
+            
+            const wavBlob = bufferToWav(buffer);
+            const url = URL.createObjectURL(wavBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ai-beat.wav';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function bufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1;
+            const bitDepth = 16;
+            
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            
+            const dataLength = buffer.length * blockAlign;
+            const bufferLength = 44 + dataLength;
+            
+            const arrayBuffer = new ArrayBuffer(bufferLength);
+            const view = new DataView(arrayBuffer);
+            
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataLength, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataLength, true);
+            
+            let offset = 44;
+            for (let i = 0; i < buffer.length; i++) {
+                for (let ch = 0; ch < numChannels; ch++) {
+                    const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+                    view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+                    offset += 2;
+                }
+            }
+            
+            return new Blob([arrayBuffer], { type: 'audio/wav' });
+        }
+        
+        async function generateMusic() {
+            const prompt = document.getElementById('prompt').value.trim();
+            if (!prompt) {
+                alert('Введите описание музыки');
+                return;
+            }
+            
+            const btn = document.getElementById('send-btn');
+            const output = document.getElementById('output');
+            const loading = document.getElementById('loading');
+            
+            btn.disabled = true;
+            output.style.display = 'none';
+            loading.style.display = 'block';
+            
+            const steps = parseInt(document.getElementById('steps').value) || 16;
+            const sections = parseInt(document.getElementById('sections').value) || 4;
+            
+            const systemPrompt = currentMode === 'simple' 
+                ? `Ты AI музыкальный продюсер. Генерируй паттерн ударных в формате для драм-машины.
+
+Формат простой (${sections} секций по ${steps} шагов):
+C1 | C2 | C3 | C4
+[кик] | [снейр] | [закрытый хай-хэт] | [открытый хай-хэт/райд]
+
+Где:
+- 'X' или 'x' = звучит
+- '-' = тишина
+- Кик = бас-барабан
+- Снейр = малый барабан  
+- Хай-хэт = тарелка
+
+Пример для 4 шагов:
+C1 | C2 | C3 | C4
+X-- | --- | x-x | ---
+--- | X-- | x-x | --x
+X-- | --- | x-x | ---
+--- | X-- | x-x | --x
+
+Генерируй ${sections} строк (секций), каждая строка = ${steps} символов.
+Ответь ТОЛЬКО паттерном, без объяснений.`
+                : `Ты AI музыкальный продюсер. Генерируй паттерн ударных в ЭКСПЕРИМЕНТАЛЬНОМ формате.
+
+Формат с нумерацией строк:
+Row XX | C1 | C2 | C3 | C4
+XX = номер шага (01-${sections * steps})
+
+Где:
+- XX = номер шага от 01 до ${sections * steps}
+- 'X' или 'x' = звучит
+- '-' = тишина
+- Кик = бас-барабан
+- Снейр = малый барабан  
+- Хай-хэт = тарелка
+
+Пример:
+Row 01 | X-- | --- | x-x | ---
+Row 05 | --- | X-- | x-x | --x
+Row 09 | X-- | --- | x-x | ---
+Row 13 | --- | X-- | x-x | --x
+
+Можешь указывать звуки на любых строках. Пробелы заполняй тишиной.
+Ответь ТОЛЬКО паттерном, без объяснений.`;
+            
+            try {
+                const model = document.getElementById('model-select').value || 'llama3';
+                const data = await API.post('/api/music-chat', {
+                    prompt: prompt,
+                    system: systemPrompt,
+                    mode: currentMode,
+                    steps: steps,
+                    sections: sections,
+                    model: model
+                });
+                
+                currentPattern = parsePattern(data.response);
+                displayPattern(currentPattern);
+                output.style.display = 'block';
+            } catch (e) {
+                alert('Ошибка генерации: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
